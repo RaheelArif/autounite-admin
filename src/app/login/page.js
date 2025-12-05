@@ -7,8 +7,8 @@ import Image from 'next/image';
 import { login, isAuthenticated } from '@/lib/auth';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@autounite.com');
+  const [password, setPassword] = useState('SecurePassword123!');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
