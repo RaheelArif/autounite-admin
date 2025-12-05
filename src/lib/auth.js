@@ -3,8 +3,8 @@
  * Handles login, token storage, and API authentication
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'f9e1d8c7b6a504321f9e1d8c7b6a504321f9e1d8c7b6a5a0d3f2e1c0b9a87654';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY ;
 
 /**
  * Get default headers with API key
