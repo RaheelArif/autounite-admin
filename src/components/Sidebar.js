@@ -6,13 +6,15 @@ import {
   FaSearch, 
   FaUsers, 
   FaPaperPlane,
-  FaTimes 
+  FaTimes,
+  FaDatabase
 } from 'react-icons/fa';
 
 const menuItems = [
   { id: 'queries', label: 'Queries', icon: FaSearch },
   { id: 'users', label: 'Users', icon: FaUsers },
   { id: 'request', label: 'Request', icon: FaPaperPlane },
+  { id: 'scraping', label: 'Scraping', icon: FaDatabase },
 ];
 
 export default function Sidebar({ isOpen, onClose, activeTab, setActiveTab }) {

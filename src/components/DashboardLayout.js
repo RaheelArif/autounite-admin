@@ -7,11 +7,14 @@ import Navbar from './Navbar';
 import QueriesPage from '@/app/queries/page';
 import UsersPageContent from '@/app/users/UsersPageContent';
 import RequestPageContent from '@/app/request/RequestPageContent';
+import ScrapingPage from '@/app/scraping/page';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Initialize active tab - will be updated by useEffect based on pathname
   const [activeTab, setActiveTab] = useState('queries');
 
   // Update active tab based on pathname
@@ -22,6 +25,8 @@ export default function DashboardLayout({ children }) {
       setActiveTab('users');
     } else if (pathname === '/request') {
       setActiveTab('request');
+    } else if (pathname === '/scraping') {
+      setActiveTab('scraping');
     }
   }, [pathname]);
 
@@ -38,19 +43,31 @@ export default function DashboardLayout({ children }) {
       router.push('/users');
     } else if (tab === 'request') {
       router.push('/request');
+    } else if (tab === 'scraping') {
+      router.push('/scraping');
     }
   };
 
   // Render content based on pathname
+  // If children are provided (page wraps itself), use children
+  // Otherwise, render based on pathname
   const renderContent = () => {
+    // If children exist, use them (page has wrapped itself)
+    if (children) {
+      return children;
+    }
+    
+    // Otherwise, render based on pathname (fallback)
     if (pathname === '/' || pathname === '/queries') {
       return <QueriesPage />;
     } else if (pathname === '/users') {
       return <UsersPageContent />;
     } else if (pathname === '/request') {
       return <RequestPageContent />;
+    } else if (pathname === '/scraping') {
+      return <ScrapingPage />;
     }
-    return children;
+    return null;
   };
 
   return (
