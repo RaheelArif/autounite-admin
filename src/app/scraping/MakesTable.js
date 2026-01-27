@@ -1,18 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   FaFilter, 
   FaSearch,
-  FaChevronLeft,
-  FaChevronRight,
   FaSort,
   FaSortUp,
   FaSortDown,
   FaChevronDown,
   FaChevronUp
 } from 'react-icons/fa';
-import { getScrapingProgress, getPendingItems } from '@/lib/scraping';
+import { getMakes } from '@/lib/scraping';
 
 export default function MakesTable() {
   const [makes, setMakes] = useState([]);
@@ -22,64 +20,65 @@ export default function MakesTable() {
   
   // Filters
   const [year, setYear] = useState('');
-  const [status, setStatus] = useState('all');
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('updatedAt');
+  const [sortBy, setSortBy] = useState('count');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [includeDetails, setIncludeDetails] = useState(false);
 
-  const fetchMakes = async () => {
+  const fetchMakes = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      // Fetch makes from pending endpoint - it returns actual make items
-      // API: GET /api/v1/scraping/pending?step=makes&limit=100
-      // Returns: { success: true, count: X, data: [...] }
-      let makesData = [];
+      // Fetch makes from vehicles API
+      // Response structure: { success: true, count: 19, data: [{ make, count, yearsCount, modelsCount, ... }], makes: [...] }
+      const filters = {};
       
-      // Fetch pending makes
-      if (status === 'all' || status === 'pending') {
-        const pendingData = await getPendingItems({ step: 'makes', limit: 100 });
-        if (pendingData.data && Array.isArray(pendingData.data)) {
-          makesData = [...makesData, ...pendingData.data.filter(m => !status || m.status === status)];
-        }
-      }
-      
-      // For completed makes, we might need to check if there's a way to get them
-      // The progress endpoint gives stats, not individual items
-      // For now, we'll show pending makes and let the user filter by status
-      
-      
-      // Apply filters
       if (year) {
-        makesData = makesData.filter(m => m.year === year);
+        filters.year = year;
       }
-      if (status !== 'all') {
-        makesData = makesData.filter(m => m.status === status);
+      
+      // Map sortBy to API sort parameter
+      if (sortBy === 'count') {
+        filters.sort = 'count';
+      } else if (sortBy === 'models' || sortBy === 'modelsCount') {
+        filters.sort = 'models';
+      } else if (sortBy === 'makeName' || sortBy === 'make') {
+        // API doesn't support sorting by name, so we'll do client-side
+        filters.sort = 'count'; // Default to count for API
+      }
+      
+      filters.order = sortOrder;
+      filters.includeDetails = includeDetails;
+      
+      const response = await getMakes(filters);
+      
+      let makesData = [];
+      if (response.success && response.data && Array.isArray(response.data)) {
+        makesData = response.data;
+      } else if (Array.isArray(response)) {
+        makesData = response;
       }
       
       // Apply client-side search filter
       if (search) {
         makesData = makesData.filter(make => 
-          make.makeName?.toLowerCase().includes(search.toLowerCase())
+          make.make?.toLowerCase().includes(search.toLowerCase())
         );
       }
       
-      // Sort
-      makesData.sort((a, b) => {
-        let aVal = a[sortBy];
-        let bVal = b[sortBy];
-        
-        if (sortBy === 'updatedAt' || sortBy === 'createdAt') {
-          aVal = new Date(aVal || 0);
-          bVal = new Date(bVal || 0);
-        }
-        
-        if (sortOrder === 'asc') {
-          return aVal > bVal ? 1 : -1;
-        } else {
-          return aVal < bVal ? 1 : -1;
-        }
-      });
+      // Client-side sorting for make name (API doesn't support it)
+      if (sortBy === 'makeName' || sortBy === 'make') {
+        makesData.sort((a, b) => {
+          const aVal = (a.make || '').toLowerCase();
+          const bVal = (b.make || '').toLowerCase();
+          
+          if (sortOrder === 'asc') {
+            return aVal > bVal ? 1 : -1;
+          } else {
+            return aVal < bVal ? 1 : -1;
+          }
+        });
+      }
       
       setMakes(makesData);
     } catch (err) {
@@ -88,23 +87,47 @@ export default function MakesTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [year, sortBy, sortOrder, search, includeDetails]);
 
   useEffect(() => {
     fetchMakes();
-  }, [status, year, search]);
+  }, [fetchMakes]);
 
   const handleSort = (field) => {
-    if (sortBy === field) {
+    // Map UI field names to internal state
+    const fieldMap = {
+      'makeName': 'make',
+      'name': 'make',
+      'make': 'make',
+      'models': 'models',
+      'modelsCount': 'models',
+    };
+    
+    const mappedField = fieldMap[field] || field;
+    
+    if (sortBy === mappedField || sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortBy(field);
+      setSortBy(mappedField);
       setSortOrder('desc');
     }
   };
 
   const getSortIcon = (field) => {
-    if (sortBy !== field) {
+    // Handle field name mapping for sort icon display
+    const fieldMap = {
+      'makeName': ['make', 'makeName'],
+      'name': ['make', 'makeName'],
+      'make': ['make', 'makeName'],
+      'models': ['models', 'modelsCount'],
+      'modelsCount': ['models', 'modelsCount'],
+      'count': ['count'],
+    };
+    
+    const fieldsToCheck = fieldMap[field] || [field];
+    const isActive = fieldsToCheck.includes(sortBy);
+    
+    if (!isActive) {
       return <FaSort className="w-4 h-4 text-slate-500" />;
     }
     return sortOrder === 'asc' 
@@ -112,40 +135,18 @@ export default function MakesTable() {
       : <FaSortDown className="w-4 h-4 text-blue-400" />;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: { color: 'yellow', icon: '⏳', text: 'Pending' },
-      in_progress: { color: 'blue', icon: '🔄', text: 'In Progress' },
-      completed: { color: 'green', icon: '✅', text: 'Completed' },
-      failed: { color: 'red', icon: '❌', text: 'Failed' },
-    };
-    const badge = badges[status] || badges.pending;
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-        badge.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-300' :
-        badge.color === 'blue' ? 'bg-blue-500/20 text-blue-300' :
-        badge.color === 'green' ? 'bg-green-500/20 text-green-300' :
-        'bg-red-500/20 text-red-300'
-      }`}>
-        {badge.icon} {badge.text}
-      </span>
-    );
-  };
 
-  // Get unique years from makes
-  const years = [...new Set(makes.map(m => m.year).filter(Boolean))].sort((a, b) => b - a);
+  // Get unique years from makes (for filter dropdown)
+  // If includeDetails is true, we can get years from the years array
+  // Otherwise, we'll use common years
+  const yearsFromMakes = makes
+    .flatMap(m => m.years || (m.year ? [m.year] : []))
+    .filter(Boolean);
+  const years = [...new Set(yearsFromMakes)].sort((a, b) => b - a);
+  
+  // If no years available yet, provide common years as options
+  const defaultYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
   return (
     <div className="space-y-6">
@@ -168,7 +169,7 @@ export default function MakesTable() {
         
         {filtersExpanded && (
           <div className="px-6 pb-6 border-t border-slate-700/50">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Year Filter */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -187,34 +188,9 @@ export default function MakesTable() {
               "
             >
               <option value="">All Years</option>
-              {years.map(y => (
+              {(years.length > 0 ? years : defaultYears).map(y => (
                 <option key={y} value={y}>{y}</option>
               ))}
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Status
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="
-                w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
-                rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
-              "
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
             </select>
           </div>
 
@@ -245,8 +221,30 @@ export default function MakesTable() {
                 "
               />
             </div>
-            </div>
-            </div>
+          </div>
+          </div>
+
+          {/* Include Details Toggle */}
+          <div className="mt-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeDetails}
+                onChange={(e) => setIncludeDetails(e.target.checked)}
+                className="
+                  w-4 h-4
+                  rounded
+                  bg-slate-900/50 border border-slate-700/50
+                  text-blue-500
+                  focus:ring-2 focus:ring-blue-500/50
+                  focus:ring-offset-0
+                "
+              />
+              <span className="text-sm text-slate-300">
+                Include details (years and models arrays)
+              </span>
+            </label>
+          </div>
 
             {/* Filter Actions */}
             <div className="flex gap-3 mt-6">
@@ -268,8 +266,10 @@ export default function MakesTable() {
               <button
                 onClick={() => {
                   setYear('');
-                  setStatus('all');
                   setSearch('');
+                  setSortBy('count');
+                  setSortOrder('desc');
+                  setIncludeDetails(false);
                 }}
                 className="
                   px-6 py-2
@@ -311,66 +311,101 @@ export default function MakesTable() {
                 <tr>
                   <th className="px-6 py-4 text-left">
                     <button
-                      onClick={() => handleSort('year')}
-                      className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
-                    >
-                      Year {getSortIcon('year')}
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <button
                       onClick={() => handleSort('makeName')}
                       className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
                     >
                       Make Name {getSortIcon('makeName')}
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
-                    Total Models
-                  </th>
                   <th className="px-6 py-4 text-left">
                     <button
-                      onClick={() => handleSort('createdAt')}
+                      onClick={() => handleSort('count')}
                       className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
                     >
-                      Created At {getSortIcon('createdAt')}
+                      Vehicle Count {getSortIcon('count')}
                     </button>
                   </th>
                   <th className="px-6 py-4 text-left">
                     <button
-                      onClick={() => handleSort('updatedAt')}
+                      onClick={() => handleSort('models')}
                       className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
                     >
-                      Updated At {getSortIcon('updatedAt')}
+                      Models Count {getSortIcon('models')}
                     </button>
                   </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                    Years Count
+                  </th>
+                  {includeDetails && (
+                    <>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                        Years
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                        Models
+                      </th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/50">
-                {makes.map((make) => (
+                {makes.map((make, index) => (
                   <tr
-                    key={make._id || `${make.year}-${make.makeName}`}
+                    key={make._id || make.id || `${make.make || index}`}
                     className="hover:bg-slate-800/30 transition-colors"
                   >
-                    <td className="px-6 py-4 text-sm text-slate-300">{make.year || '-'}</td>
                     <td className="px-6 py-4 text-sm text-slate-200 font-medium">
-                      {make.makeName || '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(make.status || 'pending')}
+                      {make.make || '-'}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-300">
-                      {make.totalModels || make.count || 0}
+                      {make.count || 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
-                      {formatDate(make.createdAt)}
+                    <td className="px-6 py-4 text-sm text-slate-300">
+                      {make.modelsCount || 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
-                      {formatDate(make.updatedAt)}
+                    <td className="px-6 py-4 text-sm text-slate-300">
+                      {make.yearsCount || 0}
                     </td>
+                    {includeDetails && (
+                      <>
+                        <td className="px-6 py-4 text-sm text-slate-300">
+                          {make.years && make.years.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {make.years.slice(0, 5).map((y, i) => (
+                                <span key={i} className="px-2 py-1 bg-slate-700/50 rounded text-xs">
+                                  {y}
+                                </span>
+                              ))}
+                              {make.years.length > 5 && (
+                                <span className="px-2 py-1 text-slate-500 text-xs">
+                                  +{make.years.length - 5} more
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300">
+                          {make.models && make.models.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {make.models.slice(0, 5).map((m, i) => (
+                                <span key={i} className="px-2 py-1 bg-slate-700/50 rounded text-xs">
+                                  {m}
+                                </span>
+                              ))}
+                              {make.models.length > 5 && (
+                                <span className="px-2 py-1 text-slate-500 text-xs">
+                                  +{make.models.length - 5} more
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -217,3 +217,53 @@ export const getVehicleImages = async (id) => {
   const data = await response.json();
   return data;
 };
+
+/**
+ * Get makes with filters
+ * GET /api/v1/vehicles/makes - All makes
+ * GET /api/v1/vehicles/makes?year=2024 - Makes for 2024 only
+ * GET /api/v1/vehicles/makes?sort=count&order=desc - Sorted by vehicle count
+ * GET /api/v1/vehicles/makes?sort=models&order=desc - Sorted by number of models
+ * GET /api/v1/vehicles/makes?includeDetails=true - Include years and models arrays
+ * 
+ * Response structure:
+ * {
+ *   "success": true,
+ *   "count": 19,
+ *   "data": [
+ *     {
+ *       "make": "Ford",
+ *       "count": 71,
+ *       "yearsCount": 5,
+ *       "modelsCount": 12,
+ *       "years": ["2024", "2023", ...],  // Only if includeDetails=true
+ *       "models": ["F-150", "Mustang", ...]  // Only if includeDetails=true
+ *     }
+ *   ],
+ *   "makes": ["Ford", "Audi", ...]
+ * }
+ */
+export const getMakes = async (filters = {}) => {
+  const {
+    year,
+    sort = 'count',
+    order = 'desc',
+    includeDetails = false,
+  } = filters;
+
+  const params = new URLSearchParams();
+  if (year) params.append('year', year);
+  if (sort) params.append('sort', sort);
+  if (order) params.append('order', order);
+  if (includeDetails) params.append('includeDetails', 'true');
+
+  const response = await authenticatedFetch(`/api/v1/vehicles/makes?${params.toString()}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to fetch makes');
+  }
+
+  const data = await response.json();
+  return data;
+};
