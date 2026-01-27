@@ -3,18 +3,14 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { 
-  FaSearch, 
-  FaUsers, 
   FaPaperPlane,
   FaTimes,
   FaDatabase
 } from 'react-icons/fa';
 
 const menuItems = [
-  { id: 'queries', label: 'Queries', icon: FaSearch },
-  { id: 'users', label: 'Users', icon: FaUsers },
-  { id: 'request', label: 'Request', icon: FaPaperPlane },
   { id: 'scraping', label: 'Scraping', icon: FaDatabase },
+  { id: 'request', label: 'Request', icon: FaPaperPlane },
 ];
 
 export default function Sidebar({ isOpen, onClose, activeTab, setActiveTab }) {

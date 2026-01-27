@@ -15,18 +15,18 @@ export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Initialize active tab - will be updated by useEffect based on pathname
-  const [activeTab, setActiveTab] = useState('queries');
+  const [activeTab, setActiveTab] = useState('scraping');
 
   // Update active tab based on pathname
   useEffect(() => {
-    if (pathname === '/' || pathname === '/queries') {
+    if (pathname === '/' || pathname === '/scraping') {
+      setActiveTab('scraping');
+    } else if (pathname === '/request') {
+      setActiveTab('request');
+    } else if (pathname === '/queries') {
       setActiveTab('queries');
     } else if (pathname === '/users') {
       setActiveTab('users');
-    } else if (pathname === '/request') {
-      setActiveTab('request');
-    } else if (pathname === '/scraping') {
-      setActiveTab('scraping');
     }
   }, [pathname]);
 
@@ -37,14 +37,10 @@ export default function DashboardLayout({ children }) {
   // Handle tab change and navigation
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    if (tab === 'queries') {
-      router.push('/');
-    } else if (tab === 'users') {
-      router.push('/users');
+    if (tab === 'scraping') {
+      router.push('/scraping');
     } else if (tab === 'request') {
       router.push('/request');
-    } else if (tab === 'scraping') {
-      router.push('/scraping');
     }
   };
 
@@ -58,14 +54,14 @@ export default function DashboardLayout({ children }) {
     }
     
     // Otherwise, render based on pathname (fallback)
-    if (pathname === '/' || pathname === '/queries') {
+    if (pathname === '/' || pathname === '/scraping') {
+      return <ScrapingPage />;
+    } else if (pathname === '/request') {
+      return <RequestPageContent />;
+    } else if (pathname === '/queries') {
       return <QueriesPage />;
     } else if (pathname === '/users') {
       return <UsersPageContent />;
-    } else if (pathname === '/request') {
-      return <RequestPageContent />;
-    } else if (pathname === '/scraping') {
-      return <ScrapingPage />;
     }
     return null;
   };
