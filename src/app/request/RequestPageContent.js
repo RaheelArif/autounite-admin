@@ -6,6 +6,8 @@ import {
   FaFilter, 
   FaChevronLeft, 
   FaChevronRight,
+  FaChevronDown,
+  FaChevronUp,
   FaCheckCircle,
   FaClock,
   FaUserCheck,
@@ -23,7 +25,7 @@ import {
 import { getUserRequests, getUserRequestStats, updateUserRequest, deleteUserRequest } from '@/lib/userRequests';
 import { getUser, isAdmin } from '@/lib/auth';
 
-export default function RequestPageContent() {
+export default function RequestPageContent({ hideHeader = false, hideStats = false }) {
   const [requests, setRequests] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +36,7 @@ export default function RequestPageContent() {
   const [editNotes, setEditNotes] = useState('');
   
   // Filter states
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [status, setStatus] = useState('');
   const [source, setSource] = useState('');
   const [search, setSearch] = useState('');
@@ -208,23 +211,25 @@ export default function RequestPageContent() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="
-            text-3xl font-bold
-            bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500
-            bg-clip-text text-transparent
-          ">
-            User Requests
-          </h1>
-          <p className="text-slate-400 mt-1">
-            Manage demo requests and early access applications
-          </p>
+      {!hideHeader && (
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="
+              text-3xl font-bold
+              bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500
+              bg-clip-text text-transparent
+            ">
+              User Requests
+            </h1>
+            <p className="text-slate-400 mt-1">
+              Manage demo requests and early access applications
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Statistics Cards */}
-      {stats && (
+      {!hideStats && stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4">
             <div className="text-sm text-slate-400">Total Requests</div>
@@ -273,13 +278,25 @@ export default function RequestPageContent() {
       )}
 
       {/* Filters Section */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FaFilter className="w-5 h-5 text-blue-400" />
-          <h2 className="text-xl font-semibold text-slate-200">Filters</h2>
-        </div>
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+        <button
+          onClick={() => setFiltersOpen(!filtersOpen)}
+          className="w-full flex items-center justify-between p-6 hover:bg-slate-800/30 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <FaFilter className="w-5 h-5 text-blue-400" />
+            <h2 className="text-xl font-semibold text-slate-200">Filters</h2>
+          </div>
+          {filtersOpen ? (
+            <FaChevronUp className="w-5 h-5 text-slate-400" />
+          ) : (
+            <FaChevronDown className="w-5 h-5 text-slate-400" />
+          )}
+        </button>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {filtersOpen && (
+          <div className="px-6 pb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Status Filter */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -375,38 +392,40 @@ export default function RequestPageContent() {
               <option value={100}>100</option>
             </select>
           </div>
-        </div>
+            </div>
 
-        {/* Filter Actions */}
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={handleApplyFilters}
-            className="
-              px-6 py-2
-              bg-gradient-to-r from-blue-500 to-blue-600
-              hover:from-blue-400 hover:to-blue-500
-              text-white font-semibold
-              rounded-lg
-              transition-all duration-300
-              flex items-center gap-2
-            "
-          >
-            <FaSearch className="w-4 h-4" />
-            Apply Filters
-          </button>
-          <button
-            onClick={handleClearFilters}
-            className="
-              px-6 py-2
-              bg-slate-700/50 hover:bg-slate-700
-              text-slate-300 font-semibold
-              rounded-lg
-              transition-all duration-300
-            "
-          >
-            Clear Filters
-          </button>
-        </div>
+            {/* Filter Actions */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleApplyFilters}
+                className="
+                  px-6 py-2
+                  bg-gradient-to-r from-blue-500 to-blue-600
+                  hover:from-blue-400 hover:to-blue-500
+                  text-white font-semibold
+                  rounded-lg
+                  transition-all duration-300
+                  flex items-center gap-2
+                "
+              >
+                <FaSearch className="w-4 h-4" />
+                Apply Filters
+              </button>
+              <button
+                onClick={handleClearFilters}
+                className="
+                  px-6 py-2
+                  bg-slate-700/50 hover:bg-slate-700
+                  text-slate-300 font-semibold
+                  rounded-lg
+                  transition-all duration-300
+                "
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Error Message */}

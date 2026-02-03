@@ -51,6 +51,21 @@ export const getUsers = async (filters = {}) => {
 };
 
 /**
+ * Get user statistics (Admin only)
+ */
+export const getUserStats = async () => {
+  const response = await authenticatedFetch('/api/v1/users/stats');
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to fetch user statistics' }));
+    throw new Error(error.message || 'Failed to fetch user statistics');
+  }
+
+  const data = await response.json();
+  return data;
+};
+
+/**
  * Get user by ID
  */
 export const getUserById = async (id) => {

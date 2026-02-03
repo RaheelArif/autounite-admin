@@ -8,6 +8,7 @@ import QueriesPage from '@/app/queries/page';
 import UsersPageContent from '@/app/users/UsersPageContent';
 import RequestPageContent from '@/app/request/RequestPageContent';
 import ScrapingPage from '@/app/scraping/page';
+import DashboardPageContent from '@/app/DashboardPageContent';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -39,6 +40,8 @@ export default function DashboardLayout({ children }) {
     setActiveTab(tab);
     if (tab === 'scraping') {
       router.push('/scraping');
+    } else if (tab === 'users') {
+      router.push('/users');
     } else if (tab === 'request') {
       router.push('/request');
     }
@@ -61,7 +64,8 @@ export default function DashboardLayout({ children }) {
     } else if (pathname === '/queries') {
       return <QueriesPage />;
     } else if (pathname === '/users') {
-      return <UsersPageContent />;
+      // Users page now uses DashboardPageContent with tabs
+      return <DashboardPageContent />;
     }
     return null;
   };
