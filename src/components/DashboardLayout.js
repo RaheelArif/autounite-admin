@@ -8,6 +8,7 @@ import QueriesPage from '@/app/queries/page';
 import UsersPageContent from '@/app/users/UsersPageContent';
 import RequestPageContent from '@/app/request/RequestPageContent';
 import ScrapingPage from '@/app/scraping/page';
+import BlogPage from '@/app/blog/page';
 import DashboardPageContent from '@/app/DashboardPageContent';
 
 export default function DashboardLayout({ children }) {
@@ -22,6 +23,8 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     if (pathname === '/' || pathname === '/scraping') {
       setActiveTab('scraping');
+    } else if (pathname === '/blog') {
+      setActiveTab('blog');
     } else if (pathname === '/request') {
       setActiveTab('request');
     } else if (pathname === '/queries') {
@@ -40,6 +43,8 @@ export default function DashboardLayout({ children }) {
     setActiveTab(tab);
     if (tab === 'scraping') {
       router.push('/scraping');
+    } else if (tab === 'blog') {
+      router.push('/blog');
     } else if (tab === 'users') {
       router.push('/users');
     } else if (tab === 'request') {
@@ -59,6 +64,8 @@ export default function DashboardLayout({ children }) {
     // Otherwise, render based on pathname (fallback)
     if (pathname === '/' || pathname === '/scraping') {
       return <ScrapingPage />;
+    } else if (pathname === '/blog') {
+      return <BlogPage />;
     } else if (pathname === '/request') {
       return <RequestPageContent />;
     } else if (pathname === '/queries') {

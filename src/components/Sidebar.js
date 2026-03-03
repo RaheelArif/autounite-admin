@@ -5,11 +5,13 @@ import Image from 'next/image';
 import { 
   FaUsers,
   FaTimes,
-  FaDatabase
+  FaDatabase,
+  FaBook
 } from 'react-icons/fa';
 
 const menuItems = [
   { id: 'scraping', label: 'Scraping', icon: FaDatabase },
+  { id: 'blog', label: 'Blog', icon: FaBook },
   { id: 'users', label: 'Users', icon: FaUsers },
 ];
 
