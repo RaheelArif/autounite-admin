@@ -6,13 +6,15 @@ import {
   FaUsers,
   FaTimes,
   FaDatabase,
-  FaBook
+  FaBook,
+  FaStore
 } from 'react-icons/fa';
 
 const menuItems = [
   { id: 'scraping', label: 'Scraping', icon: FaDatabase },
   { id: 'blog', label: 'Blog', icon: FaBook },
   { id: 'users', label: 'Users', icon: FaUsers },
+  { id: 'dealer-bootstrap', label: 'Dealer Bootstrap', icon: FaStore },
 ];
 
 export default function Sidebar({ isOpen, onClose, activeTab, setActiveTab }) {
