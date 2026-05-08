@@ -50,3 +50,36 @@ export const getCnmLeadExceptions = async () => {
   }
   return data;
 };
+
+export const updateCnmLeadExceptionStatus = async ({ exceptionId, status, reason = '' }) => {
+  const response = await authenticatedFetch(`/api/v1/dealer/admin/cnm-lead-exceptions/${exceptionId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status, reason }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to update CNM exception status');
+  }
+  return data;
+};
+
+export const getOpsVerificationRequests = async () => {
+  const response = await authenticatedFetch('/api/v1/dealer/admin/ops-verification-requests');
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to fetch ops verification requests');
+  }
+  return data;
+};
+
+export const updateOpsVerificationStatus = async ({ requestId, status, reason = '' }) => {
+  const response = await authenticatedFetch(`/api/v1/dealer/admin/ops-verification-requests/${requestId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status, reason }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to update ops verification status');
+  }
+  return data;
+};
