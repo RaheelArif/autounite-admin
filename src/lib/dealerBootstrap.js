@@ -83,3 +83,12 @@ export const updateOpsVerificationStatus = async ({ requestId, status, reason = 
   }
   return data;
 };
+
+export const getDealerReleaseGates = async () => {
+  const response = await authenticatedFetch('/api/v1/dealer/admin/release-gates');
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to fetch release gates');
+  }
+  return data;
+};

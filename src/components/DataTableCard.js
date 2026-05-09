@@ -117,10 +117,10 @@ export default function DataTableCard({
       {filteredRows.length === 0 ? (
         <p className="text-sm text-slate-400">{emptyText}</p>
       ) : (
-        <div className="space-y-2">
-          <div className="hidden md:grid grid-cols-12 gap-3 text-[11px] uppercase tracking-wide text-slate-400 px-3">
+        <div className="space-y-2 overflow-x-auto">
+          <div className="hidden md:grid grid-cols-12 gap-3 text-[11px] uppercase tracking-wide text-slate-400 px-3 min-w-[920px]">
             {columns.map((col) => (
-              <div key={col.key} className={col.className || 'col-span-3'}>
+              <div key={col.key} className={`${col.className || 'col-span-3'} min-w-0`}>
                 {col.sortable ? (
                   <button
                     type="button"
@@ -135,21 +135,21 @@ export default function DataTableCard({
                 )}
               </div>
             ))}
-            <div className="col-span-2">Actions</div>
+            <div className="col-span-2 min-w-0">Actions</div>
           </div>
 
           {filteredRows.map((row) => {
             const key = String(row?.[rowKey] || '');
             const isExpanded = expandedRowKey === key;
             return (
-              <div key={key} className="bg-slate-900/50 border border-slate-700/40 rounded p-3">
+              <div key={key} className="bg-slate-900/50 border border-slate-700/40 rounded p-3 min-w-[920px]">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
                   {columns.map((col) => (
-                    <div key={col.key} className={col.className || 'md:col-span-3'}>
+                    <div key={col.key} className={`${col.className || 'md:col-span-3'} min-w-0`}>
                       <p className="md:hidden text-[11px] uppercase tracking-wide text-slate-500 mb-1">
                         {col.label}
                       </p>
-                      <div className="text-sm text-slate-200">
+                      <div className="text-sm text-slate-200 break-words whitespace-normal">
                         {typeof col.render === 'function'
                           ? col.render(row)
                           : typeof col.value === 'function'

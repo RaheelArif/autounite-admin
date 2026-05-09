@@ -8,6 +8,7 @@ import {
   createDealerStore,
   getCnmLeadExceptions,
   getDealerAuditLogs,
+  getDealerReleaseGates,
   getDealerStores,
   getOpsVerificationRequests,
   updateCnmLeadExceptionStatus,
@@ -39,6 +40,7 @@ function DealerBootstrapPageContent() {
   const [logs, setLogs] = useState([]);
   const [cnmExceptions, setCnmExceptions] = useState([]);
   const [opsRequests, setOpsRequests] = useState([]);
+  const [releaseGates, setReleaseGates] = useState(null);
   const [adminActionReason, setAdminActionReason] = useState('ops_triage_update');
   const [activeSection, setActiveSection] = useState('bootstrap');
   const [operationsInboxTab, setOperationsInboxTab] = useState('verification');
@@ -49,17 +51,19 @@ function DealerBootstrapPageContent() {
   const loadData = async () => {
     setError('');
     try {
-      const [storesRes, logsRes, exceptionsRes, opsRes] = await Promise.all([
+      const [storesRes, logsRes, exceptionsRes, opsRes, gatesRes] = await Promise.all([
         getDealerStores(),
         getDealerAuditLogs(),
         getCnmLeadExceptions(),
         getOpsVerificationRequests(),
+        getDealerReleaseGates(),
       ]);
       const nextStores = storesRes?.data?.stores || [];
       setStores(nextStores);
       setLogs(logsRes?.data?.logs || []);
       setCnmExceptions(exceptionsRes?.data || []);
       setOpsRequests(opsRes?.data || []);
+      setReleaseGates(gatesRes?.data || null);
       if (!selectedStoreId && nextStores.length > 0) {
         setSelectedStoreId(nextStores[0]._id);
       }
@@ -119,6 +123,11 @@ function DealerBootstrapPageContent() {
   };
 
   const onUpdateExceptionStatus = async (exceptionId, status) => {
+    const reason = String(adminActionReason || '').trim();
+    if (reason.length < 6) {
+      setError('Reason note must be at least 6 characters.');
+      return;
+    }
     setLoading(true);
     setError('');
     setSuccess('');
@@ -126,7 +135,7 @@ function DealerBootstrapPageContent() {
       await updateCnmLeadExceptionStatus({
         exceptionId,
         status,
-        reason: adminActionReason,
+        reason,
       });
       setSuccess(`CNM exception marked as ${status}.`);
       await loadData();
@@ -138,6 +147,11 @@ function DealerBootstrapPageContent() {
   };
 
   const onUpdateOpsStatus = async (requestId, status) => {
+    const reason = String(adminActionReason || '').trim();
+    if (reason.length < 6) {
+      setError('Reason note must be at least 6 characters.');
+      return;
+    }
     setLoading(true);
     setError('');
     setSuccess('');
@@ -145,7 +159,7 @@ function DealerBootstrapPageContent() {
       await updateOpsVerificationStatus({
         requestId,
         status,
-        reason: adminActionReason,
+        reason,
       });
       setSuccess(`Ops verification request marked as ${status}.`);
       await loadData();
@@ -219,20 +233,28 @@ function DealerBootstrapPageContent() {
     {
       key: 'action',
       label: 'Action',
-      className: 'md:col-span-3',
+      className: 'md:col-span-2',
       sortable: true,
     },
     {
       key: 'actor',
       label: 'Actor',
-      className: 'md:col-span-3',
+      className: 'md:col-span-2',
       render: (item) => <p className="text-xs text-slate-300">{item.actorEmail || 'n/a'}</p>,
       searchValue: (item) => `${item.actorEmail || ''} ${item.actorRole || ''}`,
     },
     {
+      key: 'reason',
+      label: 'Reason',
+      className: 'md:col-span-3',
+      sortable: true,
+      render: (item) => <p className="text-xs text-slate-300">{item.reason || 'n/a'}</p>,
+      searchValue: (item) => `${item.reason || ''}`,
+    },
+    {
       key: 'object',
       label: 'Object',
-      className: 'md:col-span-4',
+      className: 'md:col-span-3',
       render: (item) => (
         <p className="text-xs text-slate-300">
           {item.objectType || 'n/a'} ({item.objectId || 'n/a'})
@@ -384,16 +406,41 @@ function DealerBootstrapPageContent() {
 
       {activeSection === 'operations' ? (
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-3">
-        <h2 className="text-lg font-semibold text-slate-200">Operations Actions</h2>
+        <h2 className="text-lg font-semibold text-slate-200">Action Reason (Audit Note)</h2>
         <input
           value={adminActionReason}
           onChange={(e) => setAdminActionReason(e.target.value)}
-          placeholder="Reason for admin action (required for audit)"
+          placeholder="Write why you are changing queue status (minimum 6 chars)"
           className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
         />
         <p className="text-xs text-slate-400">
-          This reason is attached to queue status updates for audit traceability.
+          This note is saved in audit logs whenever you click Review, Resolve, or Reopen.
         </p>
+        <p className={`text-xs ${String(adminActionReason || '').trim().length >= 6 ? 'text-emerald-300' : 'text-amber-300'}`}>
+          {String(adminActionReason || '').trim().length}/6 minimum characters
+        </p>
+      </div>
+      ) : null}
+
+      {activeSection === 'operations' ? (
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-slate-200">Release Gates</h2>
+          <span
+            className={`text-[11px] px-2 py-0.5 rounded ${
+              releaseGates?.pass ? 'bg-emerald-600/70 text-white' : 'bg-amber-600/70 text-white'
+            }`}
+          >
+            {releaseGates?.pass ? 'pass' : 'needs review'}
+          </span>
+        </div>
+        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-300">
+          {Object.entries(releaseGates?.checks || {}).map(([k, v]) => (
+            <p key={k}>
+              <span className={v ? 'text-emerald-300' : 'text-rose-300'}>{v ? 'PASS' : 'FAIL'}</span> - {k}
+            </p>
+          ))}
+        </div>
       </div>
       ) : null}
 
@@ -437,7 +484,7 @@ function DealerBootstrapPageContent() {
         onRefresh={loadData}
         emptyText="No audit logs found."
         searchAccessor={(item) =>
-          `${item.action || ''} ${item.actorEmail || ''} ${item.objectType || ''} ${item.objectId || ''}`
+          `${item.action || ''} ${item.actorEmail || ''} ${item.reason || ''} ${item.objectType || ''} ${item.objectId || ''}`
         }
         renderExpanded={(item) => (
           <>
@@ -469,25 +516,31 @@ function DealerBootstrapPageContent() {
           <>
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || item.status === 'in_review'}
               onClick={() => onUpdateOpsStatus(item._id, 'in_review')}
-              className={`px-2 py-1 text-xs rounded bg-amber-600/80 text-white ${btnInteractive} ${btnDisabled}`}
+              className={`px-2 py-1 text-xs rounded bg-amber-600/80 text-white ${
+                item.status === 'in_review' ? 'opacity-60 cursor-not-allowed' : ''
+              } ${btnInteractive} ${btnDisabled}`}
             >
               Review
             </button>
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || item.status === 'resolved'}
               onClick={() => onUpdateOpsStatus(item._id, 'resolved')}
-              className={`px-2 py-1 text-xs rounded bg-emerald-600/80 text-white ${btnInteractive} ${btnDisabled}`}
+              className={`px-2 py-1 text-xs rounded bg-emerald-600/80 text-white ${
+                item.status === 'resolved' ? 'opacity-60 cursor-not-allowed' : ''
+              } ${btnInteractive} ${btnDisabled}`}
             >
               Resolve
             </button>
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || item.status === 'open'}
               onClick={() => onUpdateOpsStatus(item._id, 'open')}
-              className={`px-2 py-1 text-xs rounded bg-slate-600/80 text-white ${btnInteractive} ${btnDisabled}`}
+              className={`px-2 py-1 text-xs rounded bg-slate-600/80 text-white ${
+                item.status === 'open' ? 'opacity-60 cursor-not-allowed' : ''
+              } ${btnInteractive} ${btnDisabled}`}
             >
               Reopen
             </button>
@@ -507,25 +560,31 @@ function DealerBootstrapPageContent() {
           <>
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || item.status === 'in_review'}
               onClick={() => onUpdateExceptionStatus(item._id, 'in_review')}
-              className={`px-2 py-1 text-xs rounded bg-amber-600/80 text-white ${btnInteractive} ${btnDisabled}`}
+              className={`px-2 py-1 text-xs rounded bg-amber-600/80 text-white ${
+                item.status === 'in_review' ? 'opacity-60 cursor-not-allowed' : ''
+              } ${btnInteractive} ${btnDisabled}`}
             >
               Review
             </button>
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || item.status === 'resolved'}
               onClick={() => onUpdateExceptionStatus(item._id, 'resolved')}
-              className={`px-2 py-1 text-xs rounded bg-emerald-600/80 text-white ${btnInteractive} ${btnDisabled}`}
+              className={`px-2 py-1 text-xs rounded bg-emerald-600/80 text-white ${
+                item.status === 'resolved' ? 'opacity-60 cursor-not-allowed' : ''
+              } ${btnInteractive} ${btnDisabled}`}
             >
               Resolve
             </button>
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || item.status === 'open'}
               onClick={() => onUpdateExceptionStatus(item._id, 'open')}
-              className={`px-2 py-1 text-xs rounded bg-slate-600/80 text-white ${btnInteractive} ${btnDisabled}`}
+              className={`px-2 py-1 text-xs rounded bg-slate-600/80 text-white ${
+                item.status === 'open' ? 'opacity-60 cursor-not-allowed' : ''
+              } ${btnInteractive} ${btnDisabled}`}
             >
               Reopen
             </button>
