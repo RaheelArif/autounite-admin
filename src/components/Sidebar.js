@@ -7,12 +7,14 @@ import {
   FaTimes,
   FaDatabase,
   FaBook,
-  FaStore
+  FaStore,
+  FaSearch,
 } from 'react-icons/fa';
 
 const menuItems = [
   { id: 'scraping', label: 'Scraping', icon: FaDatabase },
   { id: 'blog', label: 'Blog', icon: FaBook },
+  { id: 'search-governance', label: 'Search QA', icon: FaSearch },
   { id: 'users', label: 'Users', icon: FaUsers },
   { id: 'dealer-bootstrap', label: 'Dealer Bootstrap', icon: FaStore },
 ];

@@ -29,6 +29,8 @@ export default function DashboardLayout({ children }) {
       setActiveTab('request');
     } else if (pathname === '/queries') {
       setActiveTab('queries');
+    } else if (pathname === '/search-governance') {
+      setActiveTab('search-governance');
     } else if (pathname === '/users') {
       setActiveTab('users');
     } else if (pathname === '/dealer-bootstrap') {
@@ -53,6 +55,8 @@ export default function DashboardLayout({ children }) {
       router.push('/request');
     } else if (tab === 'dealer-bootstrap') {
       router.push('/dealer-bootstrap');
+    } else if (tab === 'search-governance') {
+      router.push('/search-governance');
     }
   };
 
