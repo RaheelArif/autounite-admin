@@ -56,9 +56,9 @@ const PAGE_SIZE = 10;
 function DetailLine({ label, value }) {
   if (value == null || value === '' || value === false) return null;
   return (
-    <div className="flex gap-2 py-1.5 border-b border-slate-800/60 last:border-0">
-      <span className="text-slate-500 shrink-0 w-36">{label}</span>
-      <span className="text-slate-200 break-all">
+    <div className="flex gap-2 py-1.5 border-b border-[rgba(255,255,255,0.1)] last:border-0">
+      <span className="au-dash-text-subtle shrink-0 w-36">{label}</span>
+      <span className="au-dash-text break-all">
         {Array.isArray(value) ? value.join(', ') : String(value)}
       </span>
     </div>
@@ -102,17 +102,17 @@ function GovernanceRowDetail({ row }) {
   return (
     <div className="grid md:grid-cols-2 gap-4">
       <div>
-        <p className="font-semibold text-slate-200 mb-2">Query</p>
-        <p className="text-slate-100 bg-slate-950/50 p-2 rounded mb-3 break-words">{rawQuery}</p>
-        <p className="font-semibold text-slate-200 mb-1">Parsed filters</p>
+        <p className="font-semibold au-dash-text mb-2">Query</p>
+        <p className="au-dash-text-strong bg-[rgba(8,10,18,0.45)] p-2 rounded mb-3 break-words">{rawQuery}</p>
+        <p className="font-semibold au-dash-text mb-1">Parsed filters</p>
         {hasParsed ? (
-          <div className="bg-slate-950/50 p-2 rounded">
+          <div className="bg-[rgba(8,10,18,0.45)] p-2 rounded">
             {parsedFields.map(([label, value]) => (
               <DetailLine key={label} label={label} value={value} />
             ))}
           </div>
         ) : (
-          <p className="text-slate-500 text-xs bg-slate-950/50 p-2 rounded">
+          <p className="au-dash-text-subtle text-xs bg-[rgba(8,10,18,0.45)] p-2 rounded">
             Broad research query — parser kept text in search rules (body type, price caps, etc.)
             rather than locking make/model. Re-run a new search after API update for a richer snapshot.
           </p>
@@ -120,11 +120,11 @@ function GovernanceRowDetail({ row }) {
       </div>
       <div className="space-y-4">
         <div>
-          <p className="font-semibold text-slate-200 mb-1">Governance codes</p>
+          <p className="font-semibold au-dash-text mb-1">Governance codes</p>
           {codes.length ? (
             <>
               {(isOtdOnResearch || isPaymentOnResearch || isNearMeOnResearch) && (
-                <p className="text-slate-400 text-xs mb-2 leading-relaxed">
+                <p className="au-dash-text-subtle text-xs mb-2 leading-relaxed">
                   {isOtdOnResearch &&
                     'OTD / out-the-door queries should run on Cars Near Me (ZIP + listings), not Research inventory.'}
                   {isPaymentOnResearch &&
@@ -132,11 +132,11 @@ function GovernanceRowDetail({ row }) {
                   {isNearMeOnResearch &&
                     '“Near me” / local inventory belongs on Cars Near Me, not Research.'}
                   {' '}
-                  <strong className="text-slate-300">Route</strong> = where it ran;{' '}
-                  <strong className="text-slate-300">Expected</strong> = where governance says it should go.
+                  <strong className="au-dash-text-muted">Route</strong> = where it ran;{' '}
+                  <strong className="au-dash-text-muted">Expected</strong> = where governance says it should go.
                 </p>
               )}
-              <ul className="bg-slate-950/50 p-2 rounded space-y-1">
+              <ul className="bg-[rgba(8,10,18,0.45)] p-2 rounded space-y-1">
                 {codes.map((code) => (
                   <li key={code} className="text-amber-200 font-mono text-xs">
                     {code}
@@ -145,17 +145,17 @@ function GovernanceRowDetail({ row }) {
               </ul>
             </>
           ) : (
-            <p className="text-slate-500 text-xs">None — route matched expected target.</p>
+            <p className="au-dash-text-subtle text-xs">None — route matched expected target.</p>
           )}
         </div>
         <div>
-          <p className="font-semibold text-slate-200 mb-1">Intent warnings</p>
+          <p className="font-semibold au-dash-text mb-1">Intent warnings</p>
           {warnings.length ? (
-            <pre className="bg-slate-950/50 p-2 rounded overflow-auto max-h-40 text-xs">
+            <pre className="bg-[rgba(8,10,18,0.45)] p-2 rounded overflow-auto max-h-40 text-xs">
               {JSON.stringify(warnings, null, 2)}
             </pre>
           ) : (
-            <p className="text-slate-500 text-xs">None for this query.</p>
+            <p className="au-dash-text-subtle text-xs">None for this query.</p>
           )}
         </div>
         {row.zip ? (
@@ -253,7 +253,7 @@ export default function SearchGovernancePage() {
   };
 
   const selectClass =
-    'w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50';
+    'au-dash-input';
 
   const filterSummary = buildFilterSummary({
     surface,
@@ -266,26 +266,7 @@ export default function SearchGovernancePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500 bg-clip-text text-transparent">
-              Search Governance
-            </h1>
-            <p className="text-slate-400 mt-1">
-              S6 — Research &amp; Cars Near Me searches (route mismatch, no results)
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setTestGuideOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-blue-500/40 bg-blue-600/15 text-blue-300 hover:bg-blue-600/25 text-sm font-medium shrink-0"
-          >
-            <FaBook className="w-4 h-4" />
-            How to test
-          </button>
-        </div>
-
+      <div className="au-dash-page">
         {!isAdmin() && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-amber-200 text-sm">
             Admin role required. Current role: <strong>{userRole}</strong>
@@ -299,37 +280,37 @@ export default function SearchGovernancePage() {
             role="presentation"
           >
             <div
-              className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-lg shadow-xl max-h-[85vh] overflow-y-auto"
+              className="au-dash-modal w-full max-w-lg shadow-xl max-h-[85vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-labelledby="search-qa-test-guide-title"
             >
-              <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
+              <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.1)] sticky top-0 au-dash-modal z-10">
                 <h2
                   id="search-qa-test-guide-title"
-                  className="text-lg font-semibold text-slate-100 flex items-center gap-2"
+                  className="text-lg font-semibold au-dash-text-strong flex items-center gap-2"
                 >
-                  <FaBook className="w-4 h-4 text-blue-400" />
+                  <FaBook className="w-4 h-4 au-dash-text-strong" />
                   How to test (S6)
                 </h2>
                 <button
                   type="button"
                   onClick={() => setTestGuideOpen(false)}
-                  className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+                  className="p-2 rounded-lg au-dash-text-subtle hover:au-dash-text hover:au-dash-badge"
                   aria-label="Close"
                 >
                   <FaTimes className="w-5 h-5" />
                 </button>
               </div>
               <div className="p-6">
-                <ol className="list-decimal list-inside space-y-3 text-sm text-slate-300">
+                <ol className="list-decimal list-inside space-y-3 text-sm au-dash-text-muted">
                   <li>
                     Start <strong>API</strong> (:3002), <strong>consumer</strong> (:3000),{' '}
                     <strong>admin</strong> (:3001) — admin login with admin role.
                   </li>
                   <li>
-                    On consumer: <code className="text-blue-300">/research</code> or{' '}
-                    <code className="text-blue-300">/cars-near-me</code> — run a search (chip or type + enter).
+                    On consumer: <code className="au-dash-text">/research</code> or{' '}
+                    <code className="au-dash-text">/cars-near-me</code> — run a search (chip or type + enter).
                   </li>
                   <li>
                     Refresh this page — new row in the table below. <strong>Total logged</strong> should increase.
@@ -347,15 +328,15 @@ export default function SearchGovernancePage() {
                     Expand <strong>Synonyms</strong> — add a mapping, then repeat the same query on consumer to verify.
                   </li>
                 </ol>
-                <p className="text-xs text-slate-500 mt-4 pt-4 border-t border-slate-700/50">
-                  Open links use <code className="text-blue-300">{getConsumerBaseUrl()}</code>. For local dev, set{' '}
-                  <code className="text-blue-300">NEXT_PUBLIC_CONSUMER_BASE_URL=http://localhost:3000</code> in admin{' '}
-                  <code className="text-blue-300">.env</code>.
+                <p className="text-xs au-dash-text-subtle mt-4 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                  Open links use <code className="au-dash-text">{getConsumerBaseUrl()}</code>. For local dev, set{' '}
+                  <code className="au-dash-text">NEXT_PUBLIC_CONSUMER_BASE_URL=http://localhost:3000</code> in admin{' '}
+                  <code className="au-dash-text">.env</code>.
                 </p>
                 <button
                   type="button"
                   onClick={() => setTestGuideOpen(false)}
-                  className="mt-4 w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200 text-sm"
+                  className="mt-4 w-full au-dash-btn text-sm"
                 >
                   Close
                 </button>
@@ -364,26 +345,36 @@ export default function SearchGovernancePage() {
           </div>
         )}
 
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3">
-              <div className="text-xs text-slate-400">Total logged</div>
-              <div className="text-xl font-bold text-blue-400 mt-0.5">{stats.total ?? 0}</div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {stats ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1 min-w-[min(100%,16rem)]">
+              <div className="au-dash-card p-3">
+                <div className="text-xs au-dash-text-subtle">Total logged</div>
+                <div className="text-xl font-bold au-dash-text-strong mt-0.5">{stats.total ?? 0}</div>
+              </div>
+              <div className="au-dash-card p-3">
+                <div className="text-xs au-dash-text-subtle">Route mismatch</div>
+                <div className="text-xl font-bold text-red-400 mt-0.5">{stats.routeMismatch ?? 0}</div>
+              </div>
+              <div className="au-dash-card p-3">
+                <div className="text-xs au-dash-text-subtle">No results</div>
+                <div className="text-xl font-bold text-orange-400 mt-0.5">{stats.noResults ?? 0}</div>
+              </div>
+              <div className="au-dash-card p-3">
+                <div className="text-xs au-dash-text-subtle">Weak result</div>
+                <div className="text-xl font-bold text-yellow-400 mt-0.5">{stats.weakResult ?? 0}</div>
+              </div>
             </div>
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3">
-              <div className="text-xs text-slate-400">Route mismatch</div>
-              <div className="text-xl font-bold text-red-400 mt-0.5">{stats.routeMismatch ?? 0}</div>
-            </div>
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3">
-              <div className="text-xs text-slate-400">No results</div>
-              <div className="text-xl font-bold text-orange-400 mt-0.5">{stats.noResults ?? 0}</div>
-            </div>
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3">
-              <div className="text-xs text-slate-400">Weak result</div>
-              <div className="text-xl font-bold text-yellow-400 mt-0.5">{stats.weakResult ?? 0}</div>
-            </div>
-          </div>
-        )}
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setTestGuideOpen(true)}
+            className="au-dash-btn au-dash-btn--sm shrink-0"
+          >
+            <FaBook className="w-4 h-4" />
+            How to test
+          </button>
+        </div>
 
         <CollapsibleSection
           title="Filters"
@@ -393,7 +384,7 @@ export default function SearchGovernancePage() {
         >
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
-              <label className="block text-sm text-slate-300 mb-2">Surface</label>
+              <label className="block text-sm au-dash-text-muted mb-2">Surface</label>
               <select value={surface} onChange={(e) => setSurface(e.target.value)} className={selectClass}>
                 <option value="">All</option>
                 <option value="research">Research</option>
@@ -401,7 +392,7 @@ export default function SearchGovernancePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-slate-300 mb-2">Route mismatch</label>
+              <label className="block text-sm au-dash-text-muted mb-2">Route mismatch</label>
               <select
                 value={routeMismatch}
                 onChange={(e) => setRouteMismatch(e.target.value)}
@@ -412,21 +403,21 @@ export default function SearchGovernancePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-slate-300 mb-2">No results</label>
+              <label className="block text-sm au-dash-text-muted mb-2">No results</label>
               <select value={noResults} onChange={(e) => setNoResults(e.target.value)} className={selectClass}>
                 <option value="">All</option>
                 <option value="true">Yes</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm text-slate-300 mb-2">Weak result</label>
+              <label className="block text-sm au-dash-text-muted mb-2">Weak result</label>
               <select value={weakResult} onChange={(e) => setWeakResult(e.target.value)} className={selectClass}>
                 <option value="">All</option>
                 <option value="true">Yes</option>
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm text-slate-300 mb-2">Query contains</label>
+              <label className="block text-sm au-dash-text-muted mb-2">Query contains</label>
               <input
                 type="text"
                 value={q}
@@ -440,14 +431,14 @@ export default function SearchGovernancePage() {
             <button
               type="button"
               onClick={handleApply}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm font-medium"
+              className="au-dash-btn text-sm font-medium"
             >
               Apply
             </button>
             <button
               type="button"
               onClick={handleClear}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200 text-sm"
+              className="au-dash-btn au-dash-btn--sm text-sm"
             >
               Clear
             </button>
@@ -458,18 +449,18 @@ export default function SearchGovernancePage() {
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-200 text-sm">{error}</div>
         )}
 
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+        <div className="au-dash-card overflow-hidden">
           {loading ? (
-            <p className="p-8 text-center text-slate-400">Loading…</p>
+            <p className="p-8 text-center au-dash-text-subtle">Loading…</p>
           ) : rows.length === 0 ? (
-            <div className="p-8 text-center text-slate-400">
+            <div className="p-8 text-center au-dash-text-subtle">
               <FaSearch className="w-10 h-10 mx-auto mb-2 opacity-50" />
               No logs yet — run a search on Research or CNM, then refresh.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-900/80 text-slate-400 uppercase text-xs">
+                <thead className="au-dash-table-head au-dash-text-subtle uppercase text-xs">
                   <tr>
                     <th className="px-4 py-3">Time</th>
                     <th className="px-4 py-3">Surface</th>
@@ -482,26 +473,26 @@ export default function SearchGovernancePage() {
                     <th className="px-4 py-3">Open</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/50">
+                <tbody className="divide-y divide-[rgba(255,255,255,0.1)]">
                   {rows.map((row) => (
                     <Fragment key={row._id}>
                       <tr
-                        className="hover:bg-slate-700/30 cursor-pointer"
+                        className="hover:bg-white/8 cursor-pointer"
                         onClick={() =>
                           setExpandedId(expandedId === row._id ? null : row._id)
                         }
                       >
-                        <td className="px-4 py-3 text-slate-300 whitespace-nowrap align-top">
+                        <td className="px-4 py-3 au-dash-text-muted whitespace-nowrap align-top">
                           {formatDate(row.createdAt)}
                         </td>
-                        <td className="px-4 py-3 text-slate-300 align-top">{row.surface}</td>
-                        <td className="px-4 py-3 text-slate-200 min-w-[14rem] max-w-md whitespace-normal break-words align-top leading-snug">
+                        <td className="px-4 py-3 au-dash-text-muted align-top">{row.surface}</td>
+                        <td className="px-4 py-3 au-dash-text min-w-[14rem] max-w-md whitespace-normal break-words align-top leading-snug">
                           {row.rawQuery || '—'}
                         </td>
-                        <td className="px-4 py-3 text-slate-400 align-top">{row.intent || '—'}</td>
-                        <td className="px-4 py-3 text-slate-400 align-top">{row.routeTarget || '—'}</td>
-                        <td className="px-4 py-3 text-slate-400 align-top">{row.expectedRoute || '—'}</td>
-                        <td className="px-4 py-3 text-slate-300 align-top">{row.resultCount ?? 0}</td>
+                        <td className="px-4 py-3 au-dash-text-subtle align-top">{row.intent || '—'}</td>
+                        <td className="px-4 py-3 au-dash-text-subtle align-top">{row.routeTarget || '—'}</td>
+                        <td className="px-4 py-3 au-dash-text-subtle align-top">{row.expectedRoute || '—'}</td>
+                        <td className="px-4 py-3 au-dash-text-muted align-top">{row.resultCount ?? 0}</td>
                         <td className="px-4 py-3 align-top">
                           <div className="flex flex-wrap gap-1">
                             {(row.governanceCodes || []).includes('OTD_ON_RESEARCH') && (
@@ -546,7 +537,7 @@ export default function SearchGovernancePage() {
                               rawQuery: row.rawQuery,
                               zip: row.zip,
                             });
-                            if (!href) return <span className="text-slate-500">—</span>;
+                            if (!href) return <span className="au-dash-text-subtle">—</span>;
                             return (
                               <a
                                 href={href}
@@ -554,7 +545,7 @@ export default function SearchGovernancePage() {
                                 rel="noopener noreferrer"
                                 title={href}
                                 onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 whitespace-nowrap"
+                                className="inline-flex items-center gap-1 text-xs au-dash-text-strong hover:au-dash-text whitespace-nowrap"
                               >
                                 <FaExternalLinkAlt className="w-3 h-3 shrink-0" />
                                 {row.surface === 'cars_near_me' ? 'CNM' : 'Research'}
@@ -564,8 +555,8 @@ export default function SearchGovernancePage() {
                         </td>
                       </tr>
                       {expandedId === row._id && (
-                        <tr className="bg-slate-900/50">
-                          <td colSpan={9} className="px-4 py-4 text-xs text-slate-300">
+                        <tr className="bg-[rgba(8,10,18,0.35)]">
+                          <td colSpan={9} className="px-4 py-4 text-xs au-dash-text-muted">
                             {(() => {
                               const openUrl = buildConsumerSearchUrl({
                                 surface: row.surface,
@@ -577,7 +568,7 @@ export default function SearchGovernancePage() {
                                   href={openUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-300 hover:bg-blue-600/30 text-sm"
+                                  className="au-dash-btn au-dash-btn--sm mb-4"
                                 >
                                   <FaExternalLinkAlt />
                                   {getConsumerOpenLabel(row.surface)}
@@ -596,21 +587,21 @@ export default function SearchGovernancePage() {
           )}
 
           {!loading && pagination && pagination.total > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-slate-700/50 bg-slate-900/40">
-              <span className="text-slate-400 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-[rgba(255,255,255,0.1)] bg-[rgba(8,10,18,0.28)]">
+              <span className="au-dash-text-subtle text-sm">
                 Showing {(pagination.page - 1) * pagination.limit + 1}–
                 {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
                 {pagination.total} · {PAGE_SIZE} per page
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 text-sm mr-1">
+                <span className="au-dash-text-subtle text-sm mr-1">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <button
                   type="button"
                   disabled={!pagination.hasPrevPage}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:pointer-events-none text-slate-200 flex items-center gap-1 text-sm"
+                  className="au-dash-btn au-dash-btn--sm disabled:opacity-40 disabled:pointer-events-none au-dash-text flex items-center gap-1 text-sm"
                 >
                   <FaChevronLeft /> Prev
                 </button>
@@ -618,7 +609,7 @@ export default function SearchGovernancePage() {
                   type="button"
                   disabled={!pagination.hasNextPage}
                   onClick={() => setPage((p) => p + 1)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:pointer-events-none text-slate-200 flex items-center gap-1 text-sm"
+                  className="au-dash-btn au-dash-btn--sm disabled:opacity-40 disabled:pointer-events-none au-dash-text flex items-center gap-1 text-sm"
                 >
                   Next <FaChevronRight />
                 </button>
@@ -638,9 +629,9 @@ export default function SearchGovernancePage() {
               : 'No synonyms — click to add'
           }
         >
-          <p className="text-slate-400 text-sm mb-4">
+          <p className="au-dash-text-subtle text-sm mb-4">
             Replaces phrases in Research and CNM before parsing (e.g.{' '}
-            <code className="text-blue-300">3 series</code> → <code className="text-blue-300">3-series</code>).
+            <code className="au-dash-text">3 series</code> → <code className="au-dash-text">3-series</code>).
           </p>
           {synError && (
             <p className="text-red-300 text-sm mb-3">{synError}</p>
@@ -690,27 +681,27 @@ export default function SearchGovernancePage() {
                 setSynLoading(false);
               }
             }}
-            className="px-4 py-2 mb-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg text-white text-sm"
+            className="au-dash-btn au-dash-btn--sm mb-4 text-sm"
           >
             Add synonym
           </button>
           {synonyms.length === 0 ? (
-            <p className="text-slate-500 text-sm">No synonyms yet.</p>
+            <p className="au-dash-text-subtle text-sm">No synonyms yet.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {synonyms.map((row) => (
                 <li
                   key={row._id}
-                  className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-slate-700/40"
+                  className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-[rgba(255,255,255,0.1)]/40"
                 >
-                  <span className={row.isActive ? 'text-slate-200' : 'text-slate-500 line-through'}>
+                  <span className={row.isActive ? 'au-dash-text' : 'au-dash-text-subtle line-through'}>
                     <strong>{row.from}</strong> → <strong>{row.to}</strong>
-                    {row.note ? <span className="text-slate-500 ml-2">({row.note})</span> : null}
+                    {row.note ? <span className="au-dash-text-subtle ml-2">({row.note})</span> : null}
                   </span>
                   <span className="flex gap-2">
                     <button
                       type="button"
-                      className="text-xs text-slate-400 hover:text-white"
+                      className="text-xs au-dash-text-subtle hover:text-white"
                       onClick={async () => {
                         try {
                           await toggleSearchSynonym(row._id, !row.isActive);

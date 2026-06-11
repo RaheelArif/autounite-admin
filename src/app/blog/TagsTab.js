@@ -138,7 +138,7 @@ export default function TagsTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="au-dash-page">
       {error && (
         <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/50 text-red-400">
           {error}
@@ -146,25 +146,25 @@ export default function TagsTab() {
       )}
 
       {/* Filters */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         <button
           onClick={() => setFiltersOpen(!filtersOpen)}
-          className="w-full flex items-center justify-between p-4 hover:bg-slate-800/30 transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <FaFilter className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-semibold text-slate-200">Filters</h2>
+            <FaFilter className="w-5 h-5 au-dash-text-strong" />
+            <h2 className="au-dash-card-title">Filters</h2>
           </div>
-          {filtersOpen ? <FaChevronUp className="w-5 h-5 text-slate-400" /> : <FaChevronDown className="w-5 h-5 text-slate-400" />}
+          {filtersOpen ? <FaChevronUp className="w-5 h-5 au-dash-text-subtle" /> : <FaChevronDown className="w-5 h-5 au-dash-text-subtle" />}
         </button>
         {filtersOpen && (
           <div className="px-4 pb-4 flex flex-wrap items-end gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Active</label>
+              <label className="block text-sm font-medium au-dash-text-muted mb-1">Active</label>
               <select
                 value={isActiveFilter}
                 onChange={(e) => setIsActiveFilter(e.target.value)}
-                className="px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+                className="px-4 py-2 au-dash-input rounded-lg au-dash-text-strong"
               >
                 <option value="">All</option>
                 <option value="true">Active</option>
@@ -173,13 +173,13 @@ export default function TagsTab() {
             </div>
             <button
               onClick={handleApplyFilters}
-              className="px-4 py-2 bg-blue-500/80 hover:bg-blue-500 text-white rounded-lg font-medium"
+              className="au-dash-btn font-medium"
             >
               Apply
             </button>
             <button
               onClick={handleClearFilters}
-              className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg"
+              className="px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg"
             >
               Clear
             </button>
@@ -188,12 +188,12 @@ export default function TagsTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
-        <div className="p-4 border-b border-slate-700/50 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-slate-200">Tags</h2>
+      <div className="au-dash-card overflow-hidden">
+        <div className="p-4 au-dash-tabs-underline flex justify-between items-center">
+          <h2 className="au-dash-card-title">Tags</h2>
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500/80 hover:bg-blue-500 text-white rounded-lg font-medium"
+            className="flex items-center gap-2 au-dash-btn font-medium"
           >
             <FaPlus className="w-4 h-4" />
             Add Tag
@@ -202,28 +202,28 @@ export default function TagsTab() {
 
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto" />
-            <p className="text-slate-400 mt-4">Loading tags...</p>
+            <div className="au-dash-spinner mx-auto" />
+            <p className="au-dash-text-subtle mt-4">Loading tags...</p>
           </div>
         ) : tags.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">No tags found</div>
+          <div className="p-12 text-center au-dash-text-subtle">No tags found</div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-900/50 border-b border-slate-700/50">
+                <thead className="au-dash-table-head">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Slug</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Active</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Slug</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Active</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/50">
+                <tbody className="divide-y divide-[rgba(255,255,255,0.1)]">
                   {tags.map((tag) => (
-                    <tr key={tag._id} className="hover:bg-slate-800/30">
-                      <td className="px-6 py-4 text-slate-200 font-medium">{tag.name}</td>
-                      <td className="px-6 py-4 text-slate-400 text-sm">{tag.slug}</td>
+                    <tr key={tag._id} className="hover:bg-white/5">
+                      <td className="px-6 py-4 au-dash-text font-medium">{tag.name}</td>
+                      <td className="px-6 py-4 au-dash-text-subtle text-sm">{tag.slug}</td>
                       <td className="px-6 py-4">
                         {tag.isActive ? (
                           <FaCheckCircle className="w-5 h-5 text-green-400" />
@@ -235,7 +235,7 @@ export default function TagsTab() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => openEditModal(tag)}
-                            className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400"
+                            className="p-2 rounded-lg bg-white/15 hover:bg-white/22 au-dash-text-strong"
                             title="Edit"
                           >
                             <FaEdit className="w-4 h-4" />
@@ -255,15 +255,15 @@ export default function TagsTab() {
               </table>
             </div>
             {pagination && pagination.totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-slate-700/50 flex items-center justify-between">
-                <p className="text-sm text-slate-400">
+              <div className="px-6 py-4 border-t border-[rgba(255,255,255,0.1)] flex items-center justify-between">
+                <p className="text-sm au-dash-text-subtle">
                   Page {pagination.currentPage} of {pagination.totalPages} ({pagination.total} total)
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1 || loading}
-                    className="px-4 py-2 bg-slate-700/50 rounded-lg text-slate-300 disabled:opacity-50 flex items-center gap-1"
+                    className="px-4 py-2 au-dash-badge rounded-lg au-dash-text-muted disabled:opacity-50 flex items-center gap-1"
                   >
                     <FaChevronLeft className="w-4 h-4" />
                     Previous
@@ -271,7 +271,7 @@ export default function TagsTab() {
                   <button
                     onClick={() => setPage((p) => p + 1)}
                     disabled={page >= pagination.totalPages || loading}
-                    className="px-4 py-2 bg-slate-700/50 rounded-lg text-slate-300 disabled:opacity-50 flex items-center gap-1"
+                    className="px-4 py-2 au-dash-badge rounded-lg au-dash-text-muted disabled:opacity-50 flex items-center gap-1"
                   >
                     Next
                     <FaChevronRight className="w-4 h-4" />
@@ -286,38 +286,38 @@ export default function TagsTab() {
       {/* Create/Edit Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-200">
+          <div className="au-dash-modal w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.1)]">
+              <h3 className="au-dash-card-title">
                 {editingTag ? 'Edit Tag' : 'Add Tag'}
               </h3>
               <button
                 onClick={closeModal}
-                className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
+                className="p-2 rounded-lg au-dash-text-subtle hover:au-dash-text hover:au-dash-badge"
               >
                 <FaTimes className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Name *</label>
+                <label className="block text-sm font-medium au-dash-text-muted mb-1">Name *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={handleNameChange}
                   required
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-100"
+                  className="au-dash-input"
                   placeholder="e.g. comparison"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Slug *</label>
+                <label className="block text-sm font-medium au-dash-text-muted mb-1">Slug *</label>
                 <input
                   type="text"
                   value={formData.slug}
                   onChange={(e) => setFormData((p) => ({ ...p, slug: e.target.value }))}
                   required
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-100"
+                  className="au-dash-input"
                   placeholder="e.g. comparison"
                 />
               </div>
@@ -325,14 +325,14 @@ export default function TagsTab() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2 bg-blue-500/80 hover:bg-blue-500 text-white rounded-lg font-medium disabled:opacity-50"
+                  className="flex-1 au-dash-btn disabled:opacity-50"
                 >
                   {submitting ? 'Saving...' : editingTag ? 'Update' : 'Create'}
                 </button>
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg"
+                  className="px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg"
                 >
                   Cancel
                 </button>

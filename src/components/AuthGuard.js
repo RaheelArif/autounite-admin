@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { isAuthenticated, getCurrentUser } from '@/lib/auth';
+import AdminPageLayout from './AdminPageLayout';
 
 /**
  * AuthGuard component to protect routes
@@ -22,7 +23,7 @@ export default function AuthGuard({ children }) {
           try {
             // Verify token is still valid
             await getCurrentUser();
-            router.push('/');
+            router.push('/search-governance');
             return;
           } catch (error) {
             // Token is invalid, allow access to login page
@@ -57,9 +58,9 @@ export default function AuthGuard({ children }) {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
-      </div>
+      <AdminPageLayout className="flex items-center justify-center">
+        <div className="au-dash-spinner" role="status" aria-label="Loading" />
+      </AdminPageLayout>
     );
   }
 

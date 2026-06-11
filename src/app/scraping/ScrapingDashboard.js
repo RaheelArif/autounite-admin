@@ -40,8 +40,8 @@ export default function ScrapingDashboard() {
   if (loading) {
     return (
       <div className="p-12 text-center">
-        <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto" />
-        <p className="text-slate-400 mt-4">Loading dashboard...</p>
+        <div className="au-dash-spinner mx-auto" />
+        <p className="au-dash-text-subtle mt-4">Loading dashboard...</p>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export default function ScrapingDashboard() {
   if (!summary || !summary.success) {
     return (
       <div className="p-12 text-center">
-        <p className="text-slate-400">No data available</p>
+        <p className="au-dash-text-subtle">No data available</p>
       </div>
     );
   }
@@ -97,7 +97,7 @@ export default function ScrapingDashboard() {
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
         badge.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-300' :
-        badge.color === 'blue' ? 'bg-blue-500/20 text-blue-300' :
+        badge.color === 'blue' ? 'bg-white/15 au-dash-text' :
         badge.color === 'green' ? 'bg-green-500/20 text-green-300' :
         'bg-red-500/20 text-red-300'
       }`}>
@@ -107,89 +107,89 @@ export default function ScrapingDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="au-dash-page">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Makes Card */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <div className="au-dash-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-500/20 rounded-lg">
-              <FaIndustry className="w-6 h-6 text-blue-400" />
+            <div className="p-3 bg-white/12 rounded-lg">
+              <FaIndustry className="w-6 h-6 au-dash-text-strong" />
             </div>
           </div>
-          <h3 className="text-sm font-medium text-slate-400 mb-1">Makes</h3>
-          <p className="text-2xl font-bold text-slate-200">
+          <h3 className="text-sm font-medium au-dash-text-subtle mb-1">Makes</h3>
+          <p className="text-2xl font-bold au-dash-text">
             {makes.completed} / {makes.total}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs au-dash-text-subtle mt-1">
             {makesProgress.toFixed(1)}% Complete
           </p>
         </div>
 
         {/* Models Card */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <div className="au-dash-card p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-purple-500/20 rounded-lg">
               <FaCar className="w-6 h-6 text-purple-400" />
             </div>
           </div>
-          <h3 className="text-sm font-medium text-slate-400 mb-1">Models</h3>
-          <p className="text-2xl font-bold text-slate-200">
+          <h3 className="text-sm font-medium au-dash-text-subtle mb-1">Models</h3>
+          <p className="text-2xl font-bold au-dash-text">
             {models.completed} / {models.total}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs au-dash-text-subtle mt-1">
             {modelsProgress.toFixed(1)}% Complete
           </p>
         </div>
 
         {/* Vehicles Card */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <div className="au-dash-card p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-green-500/20 rounded-lg">
               <FaDatabase className="w-6 h-6 text-green-400" />
             </div>
           </div>
-          <h3 className="text-sm font-medium text-slate-400 mb-1">Vehicles</h3>
-          <p className="text-2xl font-bold text-slate-200">
+          <h3 className="text-sm font-medium au-dash-text-subtle mb-1">Vehicles</h3>
+          <p className="text-2xl font-bold au-dash-text">
             {vehicles?.total || 0}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs au-dash-text-subtle mt-1">
             {vehicles?.withFueleconomy || 0} with fueleconomy
           </p>
         </div>
 
         {/* Coverage Card */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <div className="au-dash-card p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-yellow-500/20 rounded-lg">
               <FaCheckCircle className="w-6 h-6 text-yellow-400" />
             </div>
           </div>
-          <h3 className="text-sm font-medium text-slate-400 mb-1">Coverage</h3>
-          <p className="text-2xl font-bold text-slate-200">
+          <h3 className="text-sm font-medium au-dash-text-subtle mb-1">Coverage</h3>
+          <p className="text-2xl font-bold au-dash-text">
             {vehicles?.coverage || '0'}%
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs au-dash-text-subtle mt-1">
             {vehicles?.withFueleconomy || 0} / {vehicles?.total || 0} vehicles
           </p>
         </div>
       </div>
 
       {/* Progress Bars */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-6">
-        <h2 className="text-xl font-semibold text-slate-200">Progress Overview</h2>
+      <div className="au-dash-card p-6 space-y-6">
+        <h2 className="text-xl font-semibold au-dash-text">Progress Overview</h2>
         
         {/* Makes Progress */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-300">Makes Progress</span>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm font-medium au-dash-text-muted">Makes Progress</span>
+            <span className="text-sm au-dash-text-subtle">
               {makes.completed} / {makes.total} ({makesProgress.toFixed(1)}%)
             </span>
           </div>
-          <div className="w-full bg-slate-900/50 rounded-full h-3">
+          <div className="w-full bg-[rgba(8,10,18,0.35)] rounded-full h-3">
             <div
-              className="bg-blue-500 h-3 rounded-full transition-all duration-300"
+              className="bg-white/70 h-3 rounded-full transition-all duration-300"
               style={{ width: `${makesProgress}%` }}
             />
           </div>
@@ -198,12 +198,12 @@ export default function ScrapingDashboard() {
         {/* Models Progress */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-300">Models Progress</span>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm font-medium au-dash-text-muted">Models Progress</span>
+            <span className="text-sm au-dash-text-subtle">
               {models.completed} / {models.total} ({modelsProgress.toFixed(1)}%)
             </span>
           </div>
-          <div className="w-full bg-slate-900/50 rounded-full h-3">
+          <div className="w-full bg-[rgba(8,10,18,0.35)] rounded-full h-3">
             <div
               className="bg-purple-500 h-3 rounded-full transition-all duration-300"
               style={{ width: `${modelsProgress}%` }}
@@ -214,12 +214,12 @@ export default function ScrapingDashboard() {
         {/* Vehicles Progress */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-300">Vehicles Progress</span>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm font-medium au-dash-text-muted">Vehicles Progress</span>
+            <span className="text-sm au-dash-text-subtle">
               {vehiclesStep.completed} / {vehiclesStep.total} ({vehiclesProgress.toFixed(1)}%)
             </span>
           </div>
-          <div className="w-full bg-slate-900/50 rounded-full h-3">
+          <div className="w-full bg-[rgba(8,10,18,0.35)] rounded-full h-3">
             <div
               className="bg-green-500 h-3 rounded-full transition-all duration-300"
               style={{ width: `${vehiclesProgress}%` }}
@@ -230,31 +230,31 @@ export default function ScrapingDashboard() {
 
       {/* Recent Activity */}
       {recent && recent.length > 0 && (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
-          <div className="p-6 border-b border-slate-700/50">
-            <h2 className="text-xl font-semibold text-slate-200">Recent Activity</h2>
+        <div className="au-dash-card overflow-hidden">
+          <div className="p-6 au-dash-tabs-underline">
+            <h2 className="text-xl font-semibold au-dash-text">Recent Activity</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-900/50 border-b border-slate-700/50">
+              <thead className="au-dash-table-head">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Year</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Make</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Model</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Step</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Updated</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Year</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Make</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Model</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Step</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Updated</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-[rgba(255,255,255,0.1)]">
                 {recent.map((item) => (
-                  <tr key={item._id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-4 text-sm text-slate-300">{item.year}</td>
-                    <td className="px-6 py-4 text-sm text-slate-300">{item.makeName || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-300">{item.modelName || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-300 capitalize">{item.step}</td>
+                  <tr key={item._id} className="hover:bg-white/5 transition-colors">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">{item.year}</td>
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">{item.makeName || '-'}</td>
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">{item.modelName || '-'}</td>
+                    <td className="px-6 py-4 text-sm au-dash-text-muted capitalize">{item.step}</td>
                     <td className="px-6 py-4">{getStatusBadge(item.status)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-400">{formatDate(item.updatedAt)}</td>
+                    <td className="px-6 py-4 text-sm au-dash-text-subtle">{formatDate(item.updatedAt)}</td>
                   </tr>
                 ))}
               </tbody>

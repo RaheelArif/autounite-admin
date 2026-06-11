@@ -99,7 +99,7 @@ export default function ModelsTable() {
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
         badge.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-300' :
-        badge.color === 'blue' ? 'bg-blue-500/20 text-blue-300' :
+        badge.color === 'blue' ? 'bg-white/15 au-dash-text' :
         badge.color === 'green' ? 'bg-green-500/20 text-green-300' :
         'bg-red-500/20 text-red-300'
       }`}>
@@ -113,31 +113,31 @@ export default function ModelsTable() {
   const makes = [...new Set(models.map(m => m.makeName).filter(Boolean))].sort();
 
   return (
-    <div className="space-y-6">
+    <div className="au-dash-page">
       {/* Filters Section - Collapsible */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         <button
           onClick={() => setFiltersExpanded(!filtersExpanded)}
-          className="w-full flex items-center justify-between p-6 hover:bg-slate-800/30 transition-colors"
+          className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <FaFilter className="w-5 h-5 text-blue-400" />
-            <h2 className="text-xl font-semibold text-slate-200">Filters</h2>
+            <FaFilter className="w-5 h-5 au-dash-text-strong" />
+            <h2 className="text-xl font-semibold au-dash-text">Filters</h2>
           </div>
           {filtersExpanded ? (
-            <FaChevronUp className="w-5 h-5 text-slate-400" />
+            <FaChevronUp className="w-5 h-5 au-dash-text-subtle" />
           ) : (
-            <FaChevronDown className="w-5 h-5 text-slate-400" />
+            <FaChevronDown className="w-5 h-5 au-dash-text-subtle" />
           )}
         </button>
         
         {filtersExpanded && (
-          <div className="px-6 pb-6 border-t border-slate-700/50">
+          <div className="px-6 pb-6 border-t border-[rgba(255,255,255,0.1)]">
         
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Year Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Year
             </label>
             <input
@@ -147,22 +147,22 @@ export default function ModelsTable() {
               placeholder="e.g., 2024"
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
 
           {/* Make Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Make
             </label>
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 au-dash-text-subtle" />
               <input
                 type="text"
                 value={make}
@@ -170,11 +170,11 @@ export default function ModelsTable() {
                 placeholder="Search make..."
                 className="
                   w-full pl-10 pr-4 py-2
-                  bg-slate-900/50 border border-slate-700/50
+                  au-dash-input
                   rounded-lg
-                  text-slate-100 placeholder-slate-500
-                  focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                  focus:border-blue-500/50
+                  au-dash-text-strong placeholder-slate-500
+                  focus:outline-none focus:ring-2 focus:ring-white/25
+                  
                 "
               />
             </div>
@@ -182,7 +182,7 @@ export default function ModelsTable() {
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Status
             </label>
             <select
@@ -190,11 +190,11 @@ export default function ModelsTable() {
               onChange={(e) => setStatus(e.target.value)}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value="all">All Status</option>
@@ -207,7 +207,7 @@ export default function ModelsTable() {
 
           {/* Limit Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Results Per Page
             </label>
             <select
@@ -215,11 +215,11 @@ export default function ModelsTable() {
               onChange={(e) => setLimit(Number(e.target.value))}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value={25}>25</option>
@@ -231,11 +231,11 @@ export default function ModelsTable() {
 
             {/* Search Filter */}
             <div className="mt-4">
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label className="block text-sm font-medium au-dash-text-muted mb-2">
             Search Model Name
           </label>
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 au-dash-text-subtle" />
             <input
               type="text"
               value={search}
@@ -248,11 +248,11 @@ export default function ModelsTable() {
               placeholder="Search by model name..."
               className="
                 w-full pl-10 pr-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
@@ -264,8 +264,8 @@ export default function ModelsTable() {
                 onClick={fetchModels}
                 className="
                   px-6 py-2
-                  bg-gradient-to-r from-blue-500 to-blue-600
-                  hover:from-blue-400 hover:to-blue-500
+                  au-dash-btn
+                  
                   text-white font-semibold
                   rounded-lg
                   transition-all duration-300
@@ -284,8 +284,8 @@ export default function ModelsTable() {
                 }}
                 className="
                   px-6 py-2
-                  bg-slate-700/50 hover:bg-slate-700
-                  text-slate-300 font-semibold
+                  au-dash-tab
+                  au-dash-text-muted font-semibold
                   rounded-lg
                   transition-all duration-300
                 "
@@ -305,57 +305,57 @@ export default function ModelsTable() {
       )}
 
       {/* Models Table */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto" />
-            <p className="text-slate-400 mt-4">Loading models...</p>
+            <div className="au-dash-spinner mx-auto" />
+            <p className="au-dash-text-subtle mt-4">Loading models...</p>
           </div>
         ) : models.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-slate-400">No models found</p>
+            <p className="au-dash-text-subtle">No models found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-900/50 border-b border-slate-700/50">
+              <thead className="au-dash-table-head">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Year</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Make</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Model</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Total Vehicles</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Processed</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">With Fueleconomy</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Updated</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Year</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Make</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Model</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Total Vehicles</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Processed</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">With Fueleconomy</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Updated</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-[rgba(255,255,255,0.1)]">
                 {models.map((model) => (
                   <tr
                     key={model._id || `${model.year}-${model.makeName}-${model.modelName}`}
-                    className="hover:bg-slate-800/30 transition-colors"
+                    className="hover:bg-white/5 transition-colors"
                   >
-                    <td className="px-6 py-4 text-sm text-slate-300">{model.year || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-200 font-medium">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">{model.year || '-'}</td>
+                    <td className="px-6 py-4 text-sm au-dash-text font-medium">
                       {model.makeName || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-200 font-medium">
+                    <td className="px-6 py-4 text-sm au-dash-text font-medium">
                       {model.modelName || '-'}
                     </td>
                     <td className="px-6 py-4">
                       {getStatusBadge(model.status || 'pending')}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">
                       {model.totalVehicles || 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">
                       {model.processedVehicles || 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">
                       {model.vehiclesWithFueleconomy || 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
+                    <td className="px-6 py-4 text-sm au-dash-text-subtle">
                       {formatDate(model.updatedAt)}
                     </td>
                   </tr>

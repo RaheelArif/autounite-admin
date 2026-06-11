@@ -42,34 +42,18 @@ export default function DashboardPageContent() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="
-            text-3xl font-bold
-            bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500
-            bg-clip-text text-transparent
-          ">
-            Users & Requests
-          </h1>
-          <p className="text-slate-400 mt-1">
-            Manage users and requests dashboard
-          </p>
-        </div>
-      </div>
-
+    <div className="au-dash-page">
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Requests */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <div className="au-dash-card p-6">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-slate-400">Total Requests</div>
-            <FaPaperPlane className="w-5 h-5 text-blue-400" />
+            <div className="text-sm au-dash-text-subtle">Total Requests</div>
+            <FaPaperPlane className="w-5 h-5 au-dash-text-strong" />
           </div>
-          <div className="text-3xl font-bold text-blue-400">
+          <div className="text-3xl font-bold au-dash-text-strong">
             {loading ? (
-              <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+              <div className="au-dash-spinner" />
             ) : (
               requestStats?.totalRequests?.toLocaleString() || 0
             )}
@@ -77,9 +61,9 @@ export default function DashboardPageContent() {
         </div>
 
         {/* Requests Today */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <div className="au-dash-card p-6">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-slate-400">Requests Today</div>
+            <div className="text-sm au-dash-text-subtle">Requests Today</div>
             <FaCalendarDay className="w-5 h-5 text-green-400" />
           </div>
           <div className="text-3xl font-bold text-green-400">
@@ -92,9 +76,9 @@ export default function DashboardPageContent() {
         </div>
 
         {/* Total Users */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <div className="au-dash-card p-6">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-slate-400">Total Users</div>
+            <div className="text-sm au-dash-text-subtle">Total Users</div>
             <FaUsers className="w-5 h-5 text-purple-400" />
           </div>
           <div className="text-3xl font-bold text-purple-400">
@@ -107,9 +91,9 @@ export default function DashboardPageContent() {
         </div>
 
         {/* Users Today */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <div className="au-dash-card p-6">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-slate-400">Users Today</div>
+            <div className="text-sm au-dash-text-subtle">Users Today</div>
             <FaChartLine className="w-5 h-5 text-yellow-400" />
           </div>
           <div className="text-3xl font-bold text-yellow-400">
@@ -123,56 +107,34 @@ export default function DashboardPageContent() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
-        <div className="border-b border-slate-700/50">
-          <div className="flex">
+      <div className="au-dash-card au-dash-tabs-panel">
+        <div className="au-dash-tabs-panel__nav">
             <button
+              type="button"
               onClick={() => setActiveTab('request')}
-              className={`
-                flex-1 px-6 py-4 text-sm font-semibold
-                transition-all duration-300
-                relative
-                ${activeTab === 'request'
-                  ? 'text-blue-400 bg-slate-900/50'
-                  : 'text-slate-400 hover:text-slate-300'
-                }
-              `}
+              className={`au-dash-tabs-panel__btn ${activeTab === 'request' ? 'au-dash-tabs-panel__btn--active' : ''}`}
             >
               <div className="flex items-center justify-center gap-2">
                 <FaPaperPlane className="w-4 h-4" />
                 <span>Requests</span>
               </div>
-              {activeTab === 'request' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400" />
-              )}
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('users')}
-              className={`
-                flex-1 px-6 py-4 text-sm font-semibold
-                transition-all duration-300
-                relative
-                ${activeTab === 'users'
-                  ? 'text-blue-400 bg-slate-900/50'
-                  : 'text-slate-400 hover:text-slate-300'
-                }
-              `}
+              className={`au-dash-tabs-panel__btn ${activeTab === 'users' ? 'au-dash-tabs-panel__btn--active' : ''}`}
             >
               <div className="flex items-center justify-center gap-2">
                 <FaUsers className="w-4 h-4" />
                 <span>Users</span>
               </div>
-              {activeTab === 'users' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400" />
-              )}
             </button>
-          </div>
         </div>
 
         {/* Tab Content */}
         <div>
-          {activeTab === 'request' && <RequestPageContent hideHeader={true} hideStats={true} />}
-          {activeTab === 'users' && <UsersPageContent hideHeader={true} />}
+          {activeTab === 'request' && <RequestPageContent hideStats={true} />}
+          {activeTab === 'users' && <UsersPageContent />}
         </div>
       </div>
     </div>

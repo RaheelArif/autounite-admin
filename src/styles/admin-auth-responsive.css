@@ -1,0 +1,51 @@
+/**
+ * Admin auth — card width & field sizing (matches AutoUnite Auth OS).
+ */
+
+:root {
+  --au-auth-card-max-w: 28rem;
+  --au-auth-main-pad-y: 1.5rem;
+  --au-auth-card-px: 1.25rem;
+  --au-auth-card-pt: 1rem;
+  --au-auth-card-pb: 1.5rem;
+  --au-auth-card-gap: 1rem;
+  --au-auth-radius: 12px;
+  --au-auth-input-radius: 8px;
+  --au-auth-input-py: 0.75rem;
+  --au-auth-input-px: 1rem;
+  --au-auth-input-fs: 1rem;
+  --au-auth-label-fs: 0.8125rem;
+  --au-auth-title-fs: 1.375rem;
+  --au-auth-submit-py: 0.75rem;
+  --au-auth-submit-px: 1.25rem;
+  --au-auth-submit-fs: 0.875rem;
+  --au-auth-link-fs: 0.875rem;
+  --au-auth-body-fs: 0.9375rem;
+  --au-auth-input-min-h: 2.75rem;
+  --au-auth-submit-min-h: 2.75rem;
+  --au-auth-form-gap: 1rem;
+  --au-auth-field-gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --au-auth-card-max-w: 26rem;
+    --au-auth-main-pad-y: 2rem;
+    --au-auth-card-px: 1.5rem;
+    --au-auth-card-pt: 1.25rem;
+    --au-auth-card-pb: 1.75rem;
+    --au-auth-title-fs: 1.5rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --au-auth-card-max-w: 28rem;
+    --au-auth-card-px: 1.75rem;
+    --au-auth-card-pt: 1.5rem;
+    --au-auth-card-pb: 2rem;
+    --au-auth-title-fs: 1.625rem;
+    --au-auth-input-fs: 1rem;
+    --au-auth-submit-fs: 0.9375rem;
+  }
+}

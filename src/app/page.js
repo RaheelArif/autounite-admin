@@ -1,12 +1,15 @@
 'use client';
 
-import DashboardLayout from '@/components/DashboardLayout';
-import DashboardPageContent from './DashboardPageContent';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
+/** Default admin landing — Search QA */
 export default function Home() {
-  return (
-    <DashboardLayout>
-      <DashboardPageContent />
-    </DashboardLayout>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/search-governance');
+  }, [router]);
+
+  return null;
 }

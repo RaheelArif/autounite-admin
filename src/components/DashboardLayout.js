@@ -10,18 +10,20 @@ import RequestPageContent from '@/app/request/RequestPageContent';
 import ScrapingPage from '@/app/scraping/page';
 import BlogPage from '@/app/blog/page';
 import DashboardPageContent from '@/app/DashboardPageContent';
+import AdminPageLayout from './AdminPageLayout';
+import { getAdminNavTitle } from '@/config/adminNav';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  
   // Initialize active tab - will be updated by useEffect based on pathname
-  const [activeTab, setActiveTab] = useState('scraping');
+  const [activeTab, setActiveTab] = useState('search-governance');
 
   // Update active tab based on pathname
   useEffect(() => {
-    if (pathname === '/' || pathname === '/scraping') {
+    if (pathname === '/' || pathname === '/search-governance') {
+      setActiveTab('search-governance');
+    } else if (pathname === '/scraping') {
       setActiveTab('scraping');
     } else if (pathname === '/blog') {
       setActiveTab('blog');
@@ -29,18 +31,12 @@ export default function DashboardLayout({ children }) {
       setActiveTab('request');
     } else if (pathname === '/queries') {
       setActiveTab('queries');
-    } else if (pathname === '/search-governance') {
-      setActiveTab('search-governance');
     } else if (pathname === '/users') {
       setActiveTab('users');
     } else if (pathname === '/dealer-bootstrap') {
       setActiveTab('dealer-bootstrap');
     }
   }, [pathname]);
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
 
   // Handle tab change and navigation
   const handleTabChange = (tab) => {
@@ -70,7 +66,9 @@ export default function DashboardLayout({ children }) {
     }
     
     // Otherwise, render based on pathname (fallback)
-    if (pathname === '/' || pathname === '/scraping') {
+    if (pathname === '/' || pathname === '/search-governance') {
+      return null;
+    } else if (pathname === '/scraping') {
       return <ScrapingPage />;
     } else if (pathname === '/blog') {
       return <BlogPage />;
@@ -86,35 +84,21 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <AdminPageLayout overlayOpacity={0}>
       {/* Sidebar */}
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        activeTab={activeTab}
-        setActiveTab={handleTabChange}
-      />
+      <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
 
       {/* Main Content Area */}
-      <div className="
-        md:ml-60
-        transition-all duration-300 ease-in-out
-      ">
+      <div className="au-dash-main transition-all duration-300 ease-in-out">
         {/* Navbar */}
-        <Navbar onMenuClick={toggleSidebar} />
+        <Navbar pageTitle={getAdminNavTitle(activeTab)} />
 
         {/* Content Area - Scrollable */}
-        <main className="
-          mt-16
-          h-[calc(100vh-4rem)]
-          p-4 md:p-6 lg:p-8
-          overflow-y-auto
-          custom-scrollbar
-        ">
+        <main className="au-dash-content overflow-y-auto custom-scrollbar">
           {renderContent()}
         </main>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 }
 

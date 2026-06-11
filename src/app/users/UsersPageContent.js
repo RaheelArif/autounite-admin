@@ -21,7 +21,7 @@ import {
 import { getUsers } from '@/lib/users';
 import { getUser, isAdmin } from '@/lib/auth';
 
-export default function UsersPageContent({ hideHeader = false }) {
+export default function UsersPageContent() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -117,33 +117,15 @@ export default function UsersPageContent({ hideHeader = false }) {
   // Get sort icon
   const getSortIcon = (field) => {
     if (sortBy !== field) {
-      return <FaSort className="w-4 h-4 text-slate-500" />;
+      return <FaSort className="w-4 h-4 au-dash-text-subtle" />;
     }
     return sortOrder === 'asc' 
-      ? <FaSortUp className="w-4 h-4 text-blue-400" />
-      : <FaSortDown className="w-4 h-4 text-blue-400" />;
+      ? <FaSortUp className="w-4 h-4 au-dash-text-strong" />
+      : <FaSortDown className="w-4 h-4 au-dash-text-strong" />;
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      {!hideHeader && (
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="
-              text-3xl font-bold
-              bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500
-              bg-clip-text text-transparent
-            ">
-              Users Management
-            </h1>
-            <p className="text-slate-400 mt-1">
-              View and manage all registered users
-            </p>
-          </div>
-        </div>
-      )}
-
+    <div className="au-dash-page">
       {/* Admin Access Warning */}
       {!isAdmin() && (
         <div className="
@@ -164,19 +146,19 @@ export default function UsersPageContent({ hideHeader = false }) {
       )}
 
       {/* Filters Section */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         <button
           onClick={() => setFiltersOpen(!filtersOpen)}
-          className="w-full flex items-center justify-between p-6 hover:bg-slate-800/30 transition-colors"
+          className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <FaFilter className="w-5 h-5 text-blue-400" />
-            <h2 className="text-xl font-semibold text-slate-200">Filters</h2>
+            <FaFilter className="w-5 h-5 au-dash-text-strong" />
+            <h2 className="text-xl font-semibold au-dash-text">Filters</h2>
           </div>
           {filtersOpen ? (
-            <FaChevronUp className="w-5 h-5 text-slate-400" />
+            <FaChevronUp className="w-5 h-5 au-dash-text-subtle" />
           ) : (
-            <FaChevronDown className="w-5 h-5 text-slate-400" />
+            <FaChevronDown className="w-5 h-5 au-dash-text-subtle" />
           )}
         </button>
         
@@ -185,11 +167,11 @@ export default function UsersPageContent({ hideHeader = false }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Search
             </label>
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 au-dash-text-subtle" />
               <input
                 type="text"
                 value={search}
@@ -197,11 +179,11 @@ export default function UsersPageContent({ hideHeader = false }) {
                 placeholder="Email, name..."
                 className="
                   w-full pl-10 pr-4 py-2
-                  bg-slate-900/50 border border-slate-700/50
+                  au-dash-input
                   rounded-lg
-                  text-slate-100 placeholder-slate-500
-                  focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                  focus:border-blue-500/50
+                  au-dash-text-strong placeholder-slate-500
+                  focus:outline-none focus:ring-2 focus:ring-white/25
+                  
                 "
               />
             </div>
@@ -209,7 +191,7 @@ export default function UsersPageContent({ hideHeader = false }) {
 
           {/* Role Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Role
             </label>
             <select
@@ -217,11 +199,11 @@ export default function UsersPageContent({ hideHeader = false }) {
               onChange={(e) => setRole(e.target.value)}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value="">All</option>
@@ -232,7 +214,7 @@ export default function UsersPageContent({ hideHeader = false }) {
 
           {/* Active Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Active Status
             </label>
             <select
@@ -240,11 +222,11 @@ export default function UsersPageContent({ hideHeader = false }) {
               onChange={(e) => setIsActive(e.target.value)}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value="">All</option>
@@ -255,7 +237,7 @@ export default function UsersPageContent({ hideHeader = false }) {
 
           {/* Limit Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Results Per Page
             </label>
             <select
@@ -266,11 +248,11 @@ export default function UsersPageContent({ hideHeader = false }) {
               }}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value={10}>10</option>
@@ -287,8 +269,8 @@ export default function UsersPageContent({ hideHeader = false }) {
                 onClick={handleApplyFilters}
                 className="
                   px-6 py-2
-                  bg-gradient-to-r from-blue-500 to-blue-600
-                  hover:from-blue-400 hover:to-blue-500
+                  au-dash-btn
+                  
                   text-white font-semibold
                   rounded-lg
                   transition-all duration-300
@@ -302,8 +284,8 @@ export default function UsersPageContent({ hideHeader = false }) {
                 onClick={handleClearFilters}
                 className="
                   px-6 py-2
-                  bg-slate-700/50 hover:bg-slate-700
-                  text-slate-300 font-semibold
+                  au-dash-tab
+                  au-dash-text-muted font-semibold
                   rounded-lg
                   transition-all duration-300
                 "
@@ -327,27 +309,27 @@ export default function UsersPageContent({ hideHeader = false }) {
       )}
 
       {/* Users Table */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto" />
-            <p className="text-slate-400 mt-4">Loading users...</p>
+            <div className="au-dash-spinner mx-auto" />
+            <p className="au-dash-text-subtle mt-4">Loading users...</p>
           </div>
         ) : users.length === 0 ? (
           <div className="p-12 text-center">
-            <FaUsers className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">No users found</p>
+            <FaUsers className="w-12 h-12 au-dash-text-subtle mx-auto mb-4" />
+            <p className="au-dash-text-subtle">No users found</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-900/50 border-b border-slate-700/50">
+                <thead className="au-dash-table-head">
                   <tr>
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('createdAt')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         Date {getSortIcon('createdAt')}
                       </button>
@@ -355,7 +337,7 @@ export default function UsersPageContent({ hideHeader = false }) {
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('email')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         Email {getSortIcon('email')}
                       </button>
@@ -363,7 +345,7 @@ export default function UsersPageContent({ hideHeader = false }) {
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('firstName')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         Name {getSortIcon('firstName')}
                       </button>
@@ -371,32 +353,32 @@ export default function UsersPageContent({ hideHeader = false }) {
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('role')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         Role {getSortIcon('role')}
                       </button>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                       Status
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/50">
+                <tbody className="divide-y divide-[rgba(255,255,255,0.1)]">
                   {users.map((user) => (
                     <tr
                       key={user._id}
-                      className="hover:bg-slate-800/30 transition-colors"
+                      className="hover:bg-white/5 transition-colors"
                     >
-                      <td className="px-6 py-4 text-sm text-slate-400">
+                      <td className="px-6 py-4 text-sm au-dash-text-subtle">
                         {formatDate(user.createdAt)}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-slate-200">
+                        <div className="text-sm au-dash-text">
                           {user.email}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-slate-200">
+                        <div className="text-sm au-dash-text">
                           {user.firstName} {user.lastName}
                         </div>
                       </td>
@@ -408,7 +390,7 @@ export default function UsersPageContent({ hideHeader = false }) {
                               Admin
                             </span>
                           ) : (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">
+                            <span className="au-dash-badge flex items-center gap-1 rounded-full text-xs">
                               <FaUser className="w-3 h-3" />
                               User
                             </span>
@@ -440,10 +422,10 @@ export default function UsersPageContent({ hideHeader = false }) {
             {pagination && (
               <div className="
                 px-6 py-4
-                bg-slate-900/50 border-t border-slate-700/50
+                bg-[rgba(8,10,18,0.35)] border-t border-[rgba(255,255,255,0.1)]
                 flex items-center justify-between
               ">
-                <div className="text-sm text-slate-400">
+                <div className="text-sm au-dash-text-subtle">
                   Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to{' '}
                   {Math.min(pagination.currentPage * pagination.limit, pagination.totalUsers)} of{' '}
                   {pagination.totalUsers} users
@@ -454,8 +436,8 @@ export default function UsersPageContent({ hideHeader = false }) {
                     disabled={!pagination.hasPrevPage || loading}
                     className="
                       px-4 py-2
-                      bg-slate-700/50 hover:bg-slate-700
-                      text-slate-300
+                      au-dash-tab
+                      au-dash-text-muted
                       rounded-lg
                       disabled:opacity-50 disabled:cursor-not-allowed
                       transition-all duration-300
@@ -465,7 +447,7 @@ export default function UsersPageContent({ hideHeader = false }) {
                     <FaChevronLeft className="w-4 h-4" />
                     Previous
                   </button>
-                  <div className="px-4 py-2 text-sm text-slate-300">
+                  <div className="px-4 py-2 text-sm au-dash-text-muted">
                     Page {pagination.currentPage} of {pagination.totalPages}
                   </div>
                   <button
@@ -473,8 +455,8 @@ export default function UsersPageContent({ hideHeader = false }) {
                     disabled={!pagination.hasNextPage || loading}
                     className="
                       px-4 py-2
-                      bg-slate-700/50 hover:bg-slate-700
-                      text-slate-300
+                      au-dash-tab
+                      au-dash-text-muted
                       rounded-lg
                       disabled:opacity-50 disabled:cursor-not-allowed
                       transition-all duration-300

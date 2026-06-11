@@ -128,11 +128,11 @@ export default function MakesTable() {
     const isActive = fieldsToCheck.includes(sortBy);
     
     if (!isActive) {
-      return <FaSort className="w-4 h-4 text-slate-500" />;
+      return <FaSort className="w-4 h-4 au-dash-text-subtle" />;
     }
     return sortOrder === 'asc' 
-      ? <FaSortUp className="w-4 h-4 text-blue-400" />
-      : <FaSortDown className="w-4 h-4 text-blue-400" />;
+      ? <FaSortUp className="w-4 h-4 au-dash-text-strong" />
+      : <FaSortDown className="w-4 h-4 au-dash-text-strong" />;
   };
 
 
@@ -149,30 +149,30 @@ export default function MakesTable() {
   const defaultYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="space-y-6">
+    <div className="au-dash-page">
       {/* Filters Section - Collapsible */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         <button
           onClick={() => setFiltersExpanded(!filtersExpanded)}
-          className="w-full flex items-center justify-between p-6 hover:bg-slate-800/30 transition-colors"
+          className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <FaFilter className="w-5 h-5 text-blue-400" />
-            <h2 className="text-xl font-semibold text-slate-200">Filters</h2>
+            <FaFilter className="w-5 h-5 au-dash-text-strong" />
+            <h2 className="text-xl font-semibold au-dash-text">Filters</h2>
           </div>
           {filtersExpanded ? (
-            <FaChevronUp className="w-5 h-5 text-slate-400" />
+            <FaChevronUp className="w-5 h-5 au-dash-text-subtle" />
           ) : (
-            <FaChevronDown className="w-5 h-5 text-slate-400" />
+            <FaChevronDown className="w-5 h-5 au-dash-text-subtle" />
           )}
         </button>
         
         {filtersExpanded && (
-          <div className="px-6 pb-6 border-t border-slate-700/50">
+          <div className="px-6 pb-6 border-t border-[rgba(255,255,255,0.1)]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Year Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Year
             </label>
             <select
@@ -180,11 +180,11 @@ export default function MakesTable() {
               onChange={(e) => setYear(e.target.value)}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value="">All Years</option>
@@ -196,11 +196,11 @@ export default function MakesTable() {
 
           {/* Search Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Search Make Name
             </label>
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 au-dash-text-subtle" />
               <input
                 type="text"
                 value={search}
@@ -213,11 +213,11 @@ export default function MakesTable() {
                 placeholder="Search by make name..."
                 className="
                   w-full pl-10 pr-4 py-2
-                  bg-slate-900/50 border border-slate-700/50
+                  au-dash-input
                   rounded-lg
-                  text-slate-100 placeholder-slate-500
-                  focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                  focus:border-blue-500/50
+                  au-dash-text-strong placeholder-slate-500
+                  focus:outline-none focus:ring-2 focus:ring-white/25
+                  
                 "
               />
             </div>
@@ -234,13 +234,13 @@ export default function MakesTable() {
                 className="
                   w-4 h-4
                   rounded
-                  bg-slate-900/50 border border-slate-700/50
-                  text-blue-500
-                  focus:ring-2 focus:ring-blue-500/50
+                  au-dash-input
+                  au-dash-text-strong
+                  focus:ring-2 focus:ring-white/25
                   focus:ring-offset-0
                 "
               />
-              <span className="text-sm text-slate-300">
+              <span className="text-sm au-dash-text-muted">
                 Include details (years and models arrays)
               </span>
             </label>
@@ -252,8 +252,8 @@ export default function MakesTable() {
                 onClick={fetchMakes}
                 className="
                   px-6 py-2
-                  bg-gradient-to-r from-blue-500 to-blue-600
-                  hover:from-blue-400 hover:to-blue-500
+                  au-dash-btn
+                  
                   text-white font-semibold
                   rounded-lg
                   transition-all duration-300
@@ -273,8 +273,8 @@ export default function MakesTable() {
                 }}
                 className="
                   px-6 py-2
-                  bg-slate-700/50 hover:bg-slate-700
-                  text-slate-300 font-semibold
+                  au-dash-tab
+                  au-dash-text-muted font-semibold
                   rounded-lg
                   transition-all duration-300
                 "
@@ -294,25 +294,25 @@ export default function MakesTable() {
       )}
 
       {/* Makes Table */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto" />
-            <p className="text-slate-400 mt-4">Loading makes...</p>
+            <div className="au-dash-spinner mx-auto" />
+            <p className="au-dash-text-subtle mt-4">Loading makes...</p>
           </div>
         ) : makes.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-slate-400">No makes found</p>
+            <p className="au-dash-text-subtle">No makes found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-900/50 border-b border-slate-700/50">
+              <thead className="au-dash-table-head">
                 <tr>
                   <th className="px-6 py-4 text-left">
                     <button
                       onClick={() => handleSort('makeName')}
-                      className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                      className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                     >
                       Make Name {getSortIcon('makeName')}
                     </button>
@@ -320,7 +320,7 @@ export default function MakesTable() {
                   <th className="px-6 py-4 text-left">
                     <button
                       onClick={() => handleSort('count')}
-                      className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                      className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                     >
                       Vehicle Count {getSortIcon('count')}
                     </button>
@@ -328,56 +328,56 @@ export default function MakesTable() {
                   <th className="px-6 py-4 text-left">
                     <button
                       onClick={() => handleSort('models')}
-                      className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                      className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                     >
                       Models Count {getSortIcon('models')}
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                     Years Count
                   </th>
                   {includeDetails && (
                     <>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                      <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                         Years
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                      <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                         Models
                       </th>
                     </>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-[rgba(255,255,255,0.1)]">
                 {makes.map((make, index) => (
                   <tr
                     key={make._id || make.id || `${make.make || index}`}
-                    className="hover:bg-slate-800/30 transition-colors"
+                    className="hover:bg-white/5 transition-colors"
                   >
-                    <td className="px-6 py-4 text-sm text-slate-200 font-medium">
+                    <td className="px-6 py-4 text-sm au-dash-text font-medium">
                       {make.make || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">
                       {make.count || 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">
                       {make.modelsCount || 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">
                       {make.yearsCount || 0}
                     </td>
                     {includeDetails && (
                       <>
-                        <td className="px-6 py-4 text-sm text-slate-300">
+                        <td className="px-6 py-4 text-sm au-dash-text-muted">
                           {make.years && make.years.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {make.years.slice(0, 5).map((y, i) => (
-                                <span key={i} className="px-2 py-1 bg-slate-700/50 rounded text-xs">
+                                <span key={i} className="px-2 py-1 au-dash-badge">
                                   {y}
                                 </span>
                               ))}
                               {make.years.length > 5 && (
-                                <span className="px-2 py-1 text-slate-500 text-xs">
+                                <span className="px-2 py-1 au-dash-text-subtle text-xs">
                                   +{make.years.length - 5} more
                                 </span>
                               )}
@@ -386,16 +386,16 @@ export default function MakesTable() {
                             '-'
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-300">
+                        <td className="px-6 py-4 text-sm au-dash-text-muted">
                           {make.models && make.models.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {make.models.slice(0, 5).map((m, i) => (
-                                <span key={i} className="px-2 py-1 bg-slate-700/50 rounded text-xs">
+                                <span key={i} className="px-2 py-1 au-dash-badge">
                                   {m}
                                 </span>
                               ))}
                               {make.models.length > 5 && (
-                                <span className="px-2 py-1 text-slate-500 text-xs">
+                                <span className="px-2 py-1 au-dash-text-subtle text-xs">
                                   +{make.models.length - 5} more
                                 </span>
                               )}

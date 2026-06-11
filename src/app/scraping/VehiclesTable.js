@@ -121,11 +121,11 @@ export default function VehiclesTable() {
 
   const getSortIcon = (field) => {
     if (sortBy !== field) {
-      return <FaSort className="w-4 h-4 text-slate-500" />;
+      return <FaSort className="w-4 h-4 au-dash-text-subtle" />;
     }
     return sortOrder === 'asc' 
-      ? <FaSortUp className="w-4 h-4 text-blue-400" />
-      : <FaSortDown className="w-4 h-4 text-blue-400" />;
+      ? <FaSortUp className="w-4 h-4 au-dash-text-strong" />
+      : <FaSortDown className="w-4 h-4 au-dash-text-strong" />;
   };
 
   const formatDate = (dateString) => {
@@ -148,34 +148,34 @@ export default function VehiclesTable() {
   const years = [...new Set(vehicles.map(v => v.year).filter(Boolean))].sort((a, b) => b - a);
 
   return (
-    <div className="space-y-6">
+    <div className="au-dash-page">
       {/* Filters Section - Collapsible */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         <button
           onClick={() => setFiltersExpanded(!filtersExpanded)}
-          className="w-full flex items-center justify-between p-6 hover:bg-slate-800/30 transition-colors"
+          className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <FaFilter className="w-5 h-5 text-blue-400" />
-            <h2 className="text-xl font-semibold text-slate-200">Filters</h2>
+            <FaFilter className="w-5 h-5 au-dash-text-strong" />
+            <h2 className="text-xl font-semibold au-dash-text">Filters</h2>
           </div>
           {filtersExpanded ? (
-            <FaChevronUp className="w-5 h-5 text-slate-400" />
+            <FaChevronUp className="w-5 h-5 au-dash-text-subtle" />
           ) : (
-            <FaChevronDown className="w-5 h-5 text-slate-400" />
+            <FaChevronDown className="w-5 h-5 au-dash-text-subtle" />
           )}
         </button>
         
         {filtersExpanded && (
-          <div className="px-6 pb-6 border-t border-slate-700/50">
+          <div className="px-6 pb-6 border-t border-[rgba(255,255,255,0.1)]">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Search
             </label>
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 au-dash-text-subtle" />
               <input
                 type="text"
                 value={search}
@@ -183,11 +183,11 @@ export default function VehiclesTable() {
                 placeholder="Make, model, trim..."
                 className="
                   w-full pl-10 pr-4 py-2
-                  bg-slate-900/50 border border-slate-700/50
+                  au-dash-input
                   rounded-lg
-                  text-slate-100 placeholder-slate-500
-                  focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                  focus:border-blue-500/50
+                  au-dash-text-strong placeholder-slate-500
+                  focus:outline-none focus:ring-2 focus:ring-white/25
+                  
                 "
               />
             </div>
@@ -195,7 +195,7 @@ export default function VehiclesTable() {
 
           {/* Year */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Year
             </label>
             <input
@@ -205,18 +205,18 @@ export default function VehiclesTable() {
               placeholder="e.g., 2024"
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
 
           {/* Make */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Make
             </label>
             <input
@@ -226,18 +226,18 @@ export default function VehiclesTable() {
               placeholder="e.g., BMW"
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
 
           {/* Model */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Model
             </label>
             <input
@@ -247,18 +247,18 @@ export default function VehiclesTable() {
               placeholder="e.g., X3 M"
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
 
           {/* Body Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Body Type
             </label>
             <input
@@ -268,18 +268,18 @@ export default function VehiclesTable() {
               placeholder="e.g., SUV"
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
 
           {/* Fuel Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Fuel Type
             </label>
             <input
@@ -289,18 +289,18 @@ export default function VehiclesTable() {
               placeholder="e.g., Premium"
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
 
           {/* MPG Range */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Min MPG
             </label>
             <input
@@ -310,17 +310,17 @@ export default function VehiclesTable() {
               placeholder="Min"
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Max MPG
             </label>
             <input
@@ -330,18 +330,18 @@ export default function VehiclesTable() {
               placeholder="Max"
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100 placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             />
           </div>
 
           {/* Has Fueleconomy */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Has Fueleconomy
             </label>
             <select
@@ -349,11 +349,11 @@ export default function VehiclesTable() {
               onChange={(e) => setHasFueleconomy(e.target.value)}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value="">All</option>
@@ -364,7 +364,7 @@ export default function VehiclesTable() {
 
           {/* Limit */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Results Per Page
             </label>
             <select
@@ -375,11 +375,11 @@ export default function VehiclesTable() {
               }}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value={25}>25</option>
@@ -395,8 +395,8 @@ export default function VehiclesTable() {
                 onClick={handleApplyFilters}
                 className="
                   px-6 py-2
-                  bg-gradient-to-r from-blue-500 to-blue-600
-                  hover:from-blue-400 hover:to-blue-500
+                  au-dash-btn
+                  
                   text-white font-semibold
                   rounded-lg
                   transition-all duration-300
@@ -410,8 +410,8 @@ export default function VehiclesTable() {
                 onClick={handleClearFilters}
                 className="
                   px-6 py-2
-                  bg-slate-700/50 hover:bg-slate-700
-                  text-slate-300 font-semibold
+                  au-dash-tab
+                  au-dash-text-muted font-semibold
                   rounded-lg
                   transition-all duration-300
                 "
@@ -431,26 +431,26 @@ export default function VehiclesTable() {
       )}
 
       {/* Vehicles Table */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto" />
-            <p className="text-slate-400 mt-4">Loading vehicles...</p>
+            <div className="au-dash-spinner mx-auto" />
+            <p className="au-dash-text-subtle mt-4">Loading vehicles...</p>
           </div>
         ) : vehicles.length === 0 ? (
           <div className="p-12 text-center">
-            <p className="text-slate-400">No vehicles found</p>
+            <p className="au-dash-text-subtle">No vehicles found</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-900/50 border-b border-slate-700/50">
+                <thead className="au-dash-table-head">
                   <tr>
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('year')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         Year {getSortIcon('year')}
                       </button>
@@ -458,7 +458,7 @@ export default function VehiclesTable() {
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('make')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         Make {getSortIcon('make')}
                       </button>
@@ -466,67 +466,67 @@ export default function VehiclesTable() {
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('model')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         Model {getSortIcon('model')}
                       </button>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                       Trim
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                       Body Type
                     </th>
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('metrics.combinedMpg')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         MPG {getSortIcon('metrics.combinedMpg')}
                       </button>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                       Fuel Type
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                       Fueleconomy
                     </th>
                     <th className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleSort('createdAt')}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold au-dash-text-muted hover:au-dash-text-strong transition-colors"
                       >
                         Created {getSortIcon('createdAt')}
                       </button>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/50">
+                <tbody className="divide-y divide-[rgba(255,255,255,0.1)]">
                   {vehicles.map((vehicle) => (
                     <tr
                       key={vehicle._id}
-                      className="hover:bg-slate-800/30 transition-colors"
+                      className="hover:bg-white/5 transition-colors"
                     >
-                      <td className="px-6 py-4 text-sm text-slate-300">{vehicle.year || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-200 font-medium">
+                      <td className="px-6 py-4 text-sm au-dash-text-muted">{vehicle.year || '-'}</td>
+                      <td className="px-6 py-4 text-sm au-dash-text font-medium">
                         {vehicle.make || '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-200 font-medium">
+                      <td className="px-6 py-4 text-sm au-dash-text font-medium">
                         {vehicle.model || '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-300">
+                      <td className="px-6 py-4 text-sm au-dash-text-muted">
                         {vehicle.trim || '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-300">
+                      <td className="px-6 py-4 text-sm au-dash-text-muted">
                         {vehicle.bodyType || '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-300">
+                      <td className="px-6 py-4 text-sm au-dash-text-muted">
                         {vehicle.metrics?.combinedMpg || '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-300">
+                      <td className="px-6 py-4 text-sm au-dash-text-muted">
                         {vehicle.metrics?.fuelType || '-'}
                       </td>
                       <td className="px-6 py-4">
@@ -542,7 +542,7 @@ export default function VehiclesTable() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-400">
+                      <td className="px-6 py-4 text-sm au-dash-text-subtle">
                         {formatDate(vehicle.createdAt)}
                       </td>
                       <td className="px-6 py-4">
@@ -554,8 +554,8 @@ export default function VehiclesTable() {
                             }}
                             className="
                               px-4 py-2
-                              bg-blue-500/20 hover:bg-blue-500/30
-                              text-blue-300 font-medium text-sm
+                              bg-white/15 hover:bg-white/22
+                              au-dash-text font-medium text-sm
                               rounded-lg
                               transition-all duration-300
                               flex items-center gap-2
@@ -629,10 +629,10 @@ export default function VehiclesTable() {
             {pagination && (
               <div className="
                 px-6 py-4
-                bg-slate-900/50 border-t border-slate-700/50
+                bg-[rgba(8,10,18,0.35)] border-t border-[rgba(255,255,255,0.1)]
                 flex items-center justify-between
               ">
-                <div className="text-sm text-slate-400">
+                <div className="text-sm au-dash-text-subtle">
                   Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to{' '}
                   {Math.min(pagination.currentPage * pagination.limit, pagination.totalVehicles)} of{' '}
                   {pagination.totalVehicles} vehicles
@@ -643,8 +643,8 @@ export default function VehiclesTable() {
                     disabled={!pagination.hasPrevPage || loading}
                     className="
                       px-4 py-2
-                      bg-slate-700/50 hover:bg-slate-700
-                      text-slate-300
+                      au-dash-tab
+                      au-dash-text-muted
                       rounded-lg
                       disabled:opacity-50 disabled:cursor-not-allowed
                       transition-all duration-300
@@ -654,7 +654,7 @@ export default function VehiclesTable() {
                     <FaChevronLeft className="w-4 h-4" />
                     Previous
                   </button>
-                  <div className="px-4 py-2 text-sm text-slate-300">
+                  <div className="px-4 py-2 text-sm au-dash-text-muted">
                     Page {pagination.currentPage} of {pagination.totalPages}
                   </div>
                   <button
@@ -662,8 +662,8 @@ export default function VehiclesTable() {
                     disabled={!pagination.hasNextPage || loading}
                     className="
                       px-4 py-2
-                      bg-slate-700/50 hover:bg-slate-700
-                      text-slate-300
+                      au-dash-tab
+                      au-dash-text-muted
                       rounded-lg
                       disabled:opacity-50 disabled:cursor-not-allowed
                       transition-all duration-300
@@ -684,18 +684,18 @@ export default function VehiclesTable() {
       {modalOpen && selectedVehicle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="
-            bg-slate-800 border border-slate-700/50 rounded-lg
+            au-dash-modal/50 rounded-lg
             w-full max-w-4xl max-h-[90vh] overflow-hidden
             flex flex-col
             shadow-2xl
           ">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+            <div className="flex items-center justify-between p-6 au-dash-tabs-underline">
               <div>
-                <h2 className="text-2xl font-bold text-slate-200">
+                <h2 className="text-2xl font-bold au-dash-text">
                   {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
                 </h2>
-                <p className="text-slate-400 mt-1">{selectedVehicle.trim}</p>
+                <p className="au-dash-subtitle">{selectedVehicle.trim}</p>
               </div>
               <button
                 onClick={() => {
@@ -704,8 +704,8 @@ export default function VehiclesTable() {
                 }}
                 className="
                   p-2 rounded-lg
-                  text-slate-400 hover:text-slate-200
-                  hover:bg-slate-700/50
+                  au-dash-text-subtle hover:au-dash-text
+                  hover:au-dash-badge
                   transition-colors
                 "
               >
@@ -715,93 +715,93 @@ export default function VehiclesTable() {
 
             {/* Modal Content - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-              <div className="space-y-6">
+              <div className="au-dash-page">
                 {/* Basic Information */}
-                <div className="bg-slate-900/50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-slate-200 mb-4">Basic Information</h3>
+                <div className="bg-[rgba(8,10,18,0.35)] rounded-lg p-6">
+                  <h3 className="au-dash-card-title mb-4">Basic Information</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-slate-400">Year</p>
-                      <p className="text-slate-200 font-medium">{selectedVehicle.year}</p>
+                      <p className="text-sm au-dash-text-subtle">Year</p>
+                      <p className="au-dash-text font-medium">{selectedVehicle.year}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Make</p>
-                      <p className="text-slate-200 font-medium">{selectedVehicle.make}</p>
+                      <p className="text-sm au-dash-text-subtle">Make</p>
+                      <p className="au-dash-text font-medium">{selectedVehicle.make}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Model</p>
-                      <p className="text-slate-200 font-medium">{selectedVehicle.model}</p>
+                      <p className="text-sm au-dash-text-subtle">Model</p>
+                      <p className="au-dash-text font-medium">{selectedVehicle.model}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Trim</p>
-                      <p className="text-slate-200 font-medium">{selectedVehicle.trim || 'N/A'}</p>
+                      <p className="text-sm au-dash-text-subtle">Trim</p>
+                      <p className="au-dash-text font-medium">{selectedVehicle.trim || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Body Type</p>
-                      <p className="text-slate-200 font-medium">{selectedVehicle.bodyType || 'N/A'}</p>
+                      <p className="text-sm au-dash-text-subtle">Body Type</p>
+                      <p className="au-dash-text font-medium">{selectedVehicle.bodyType || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Drivetrain</p>
-                      <p className="text-slate-200 font-medium">{selectedVehicle.drivetrain || 'N/A'}</p>
+                      <p className="text-sm au-dash-text-subtle">Drivetrain</p>
+                      <p className="au-dash-text font-medium">{selectedVehicle.drivetrain || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Number of Doors</p>
-                      <p className="text-slate-200 font-medium">{selectedVehicle.numDoors || 'N/A'}</p>
+                      <p className="text-sm au-dash-text-subtle">Number of Doors</p>
+                      <p className="au-dash-text font-medium">{selectedVehicle.numDoors || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Vehicle ID</p>
-                      <p className="text-slate-200 font-medium text-xs">{selectedVehicle._id}</p>
+                      <p className="text-sm au-dash-text-subtle">Vehicle ID</p>
+                      <p className="au-dash-text font-medium text-xs">{selectedVehicle._id}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Fuel API ID</p>
-                      <p className="text-slate-200 font-medium">{selectedVehicle.fuelApiVehicleId || 'N/A'}</p>
+                      <p className="text-sm au-dash-text-subtle">Fuel API ID</p>
+                      <p className="au-dash-text font-medium">{selectedVehicle.fuelApiVehicleId || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Metrics */}
                 {selectedVehicle.metrics && (
-                  <div className="bg-slate-900/50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-slate-200 mb-4">Fuel Economy Metrics</h3>
+                  <div className="bg-[rgba(8,10,18,0.35)] rounded-lg p-6">
+                    <h3 className="au-dash-card-title mb-4">Fuel Economy Metrics</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-sm text-slate-400">City MPG</p>
-                        <p className="text-slate-200 font-medium text-xl">{selectedVehicle.metrics.cityMpg || 'N/A'}</p>
+                        <p className="text-sm au-dash-text-subtle">City MPG</p>
+                        <p className="au-dash-text font-medium text-xl">{selectedVehicle.metrics.cityMpg || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">Highway MPG</p>
-                        <p className="text-slate-200 font-medium text-xl">{selectedVehicle.metrics.highwayMpg || 'N/A'}</p>
+                        <p className="text-sm au-dash-text-subtle">Highway MPG</p>
+                        <p className="au-dash-text font-medium text-xl">{selectedVehicle.metrics.highwayMpg || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">Combined MPG</p>
-                        <p className="text-slate-200 font-medium text-xl">{selectedVehicle.metrics.combinedMpg || 'N/A'}</p>
+                        <p className="text-sm au-dash-text-subtle">Combined MPG</p>
+                        <p className="au-dash-text font-medium text-xl">{selectedVehicle.metrics.combinedMpg || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">Fuel Type</p>
-                        <p className="text-slate-200 font-medium">{selectedVehicle.metrics.fuelType || 'N/A'}</p>
+                        <p className="text-sm au-dash-text-subtle">Fuel Type</p>
+                        <p className="au-dash-text font-medium">{selectedVehicle.metrics.fuelType || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">Annual Fuel Cost</p>
-                        <p className="text-slate-200 font-medium">${selectedVehicle.metrics.annualFuelCost?.toLocaleString() || 'N/A'}</p>
+                        <p className="text-sm au-dash-text-subtle">Annual Fuel Cost</p>
+                        <p className="au-dash-text font-medium">${selectedVehicle.metrics.annualFuelCost?.toLocaleString() || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">CO2 Emissions</p>
-                        <p className="text-slate-200 font-medium">{selectedVehicle.metrics.co2Emissions || 'N/A'} g/mi</p>
+                        <p className="text-sm au-dash-text-subtle">CO2 Emissions</p>
+                        <p className="au-dash-text font-medium">{selectedVehicle.metrics.co2Emissions || 'N/A'} g/mi</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">Electric</p>
-                        <p className="text-slate-200 font-medium">
+                        <p className="text-sm au-dash-text-subtle">Electric</p>
+                        <p className="au-dash-text font-medium">
                           {selectedVehicle.metrics.isElectric ? (
                             <span className="text-green-400">Yes</span>
                           ) : (
-                            <span className="text-slate-400">No</span>
+                            <span className="au-dash-text-subtle">No</span>
                           )}
                         </p>
                       </div>
                       {selectedVehicle.metrics.electricRange && (
                         <div>
-                          <p className="text-sm text-slate-400">Electric Range</p>
-                          <p className="text-slate-200 font-medium">{selectedVehicle.metrics.electricRange} mi</p>
+                          <p className="text-sm au-dash-text-subtle">Electric Range</p>
+                          <p className="au-dash-text font-medium">{selectedVehicle.metrics.electricRange} mi</p>
                         </div>
                       )}
                     </div>
@@ -810,8 +810,8 @@ export default function VehiclesTable() {
 
                 {/* Data Sources */}
                 {selectedVehicle.dataSource && (
-                  <div className="bg-slate-900/50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-slate-200 mb-4">Data Sources</h3>
+                  <div className="bg-[rgba(8,10,18,0.35)] rounded-lg p-6">
+                    <h3 className="au-dash-card-title mb-4">Data Sources</h3>
                     <div className="flex gap-4">
                       <div className="flex items-center gap-2">
                         {selectedVehicle.dataSource.fuelApi ? (
@@ -819,7 +819,7 @@ export default function VehiclesTable() {
                         ) : (
                           <FaTimesCircle className="w-5 h-5 text-red-400" />
                         )}
-                        <span className="text-slate-200">Fuel API</span>
+                        <span className="au-dash-text">Fuel API</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {selectedVehicle.dataSource.fueleconomy ? (
@@ -827,7 +827,7 @@ export default function VehiclesTable() {
                         ) : (
                           <FaTimesCircle className="w-5 h-5 text-red-400" />
                         )}
-                        <span className="text-slate-200">Fueleconomy API</span>
+                        <span className="au-dash-text">Fueleconomy API</span>
                       </div>
                     </div>
                   </div>
@@ -835,24 +835,24 @@ export default function VehiclesTable() {
 
                 {/* Fuel API Details */}
                 {selectedVehicle.fuelApi && (
-                  <div className="bg-slate-900/50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-slate-200 mb-4">Fuel API Details</h3>
+                  <div className="bg-[rgba(8,10,18,0.35)] rounded-lg p-6">
+                    <h3 className="au-dash-card-title mb-4">Fuel API Details</h3>
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-sm text-slate-400">ID</p>
-                          <p className="text-slate-200 font-medium">{selectedVehicle.fuelApi.id}</p>
+                          <p className="text-sm au-dash-text-subtle">ID</p>
+                          <p className="au-dash-text font-medium">{selectedVehicle.fuelApi.id}</p>
                         </div>
                         {selectedVehicle.fuelApi.model && (
                           <>
                             <div>
-                              <p className="text-sm text-slate-400">Model Year</p>
-                              <p className="text-slate-200 font-medium">{selectedVehicle.fuelApi.model.year}</p>
+                              <p className="text-sm au-dash-text-subtle">Model Year</p>
+                              <p className="au-dash-text font-medium">{selectedVehicle.fuelApi.model.year}</p>
                             </div>
                             {selectedVehicle.fuelApi.model.make && (
                               <div>
-                                <p className="text-sm text-slate-400">Make ID</p>
-                                <p className="text-slate-200 font-medium">{selectedVehicle.fuelApi.model.make.id}</p>
+                                <p className="text-sm au-dash-text-subtle">Make ID</p>
+                                <p className="au-dash-text font-medium">{selectedVehicle.fuelApi.model.make.id}</p>
                               </div>
                             )}
                           </>
@@ -860,12 +860,12 @@ export default function VehiclesTable() {
                       </div>
                       {selectedVehicle.fuelApi.products && selectedVehicle.fuelApi.products.length > 0 && (
                         <div>
-                          <p className="text-sm text-slate-400 mb-2">Available Products</p>
+                          <p className="text-sm au-dash-text-subtle mb-2">Available Products</p>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             {selectedVehicle.fuelApi.products.map((product, idx) => (
-                              <div key={idx} className="bg-slate-800/50 rounded p-3">
-                                <p className="text-slate-200 font-medium">{product.name}</p>
-                                <p className="text-xs text-slate-400">{product.type} • {product.formats_count} formats</p>
+                              <div key={idx} className="au-dash-card rounded p-3">
+                                <p className="au-dash-text font-medium">{product.name}</p>
+                                <p className="text-xs au-dash-text-subtle">{product.type} • {product.formats_count} formats</p>
                               </div>
                             ))}
                           </div>
@@ -877,55 +877,55 @@ export default function VehiclesTable() {
 
                 {/* Fueleconomy Details */}
                 {selectedVehicle.fueleconomy && (
-                  <div className="bg-slate-900/50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-slate-200 mb-4">Fueleconomy API Details</h3>
+                  <div className="bg-[rgba(8,10,18,0.35)] rounded-lg p-6">
+                    <h3 className="au-dash-card-title mb-4">Fueleconomy API Details</h3>
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {selectedVehicle.fueleconomy.id && (
                           <div>
-                            <p className="text-sm text-slate-400">ID</p>
-                            <p className="text-slate-200 font-medium">{selectedVehicle.fueleconomy.id}</p>
+                            <p className="text-sm au-dash-text-subtle">ID</p>
+                            <p className="au-dash-text font-medium">{selectedVehicle.fueleconomy.id}</p>
                           </div>
                         )}
                         {selectedVehicle.fueleconomy.cylinders && (
                           <div>
-                            <p className="text-sm text-slate-400">Cylinders</p>
-                            <p className="text-slate-200 font-medium">{selectedVehicle.fueleconomy.cylinders}</p>
+                            <p className="text-sm au-dash-text-subtle">Cylinders</p>
+                            <p className="au-dash-text font-medium">{selectedVehicle.fueleconomy.cylinders}</p>
                           </div>
                         )}
                         {selectedVehicle.fueleconomy.displ && (
                           <div>
-                            <p className="text-sm text-slate-400">Displacement</p>
-                            <p className="text-slate-200 font-medium">{selectedVehicle.fueleconomy.displ}L</p>
+                            <p className="text-sm au-dash-text-subtle">Displacement</p>
+                            <p className="au-dash-text font-medium">{selectedVehicle.fueleconomy.displ}L</p>
                           </div>
                         )}
                         {selectedVehicle.fueleconomy.trany && (
                           <div>
-                            <p className="text-sm text-slate-400">Transmission</p>
-                            <p className="text-slate-200 font-medium">{selectedVehicle.fueleconomy.trany}</p>
+                            <p className="text-sm au-dash-text-subtle">Transmission</p>
+                            <p className="au-dash-text font-medium">{selectedVehicle.fueleconomy.trany}</p>
                           </div>
                         )}
                         {selectedVehicle.fueleconomy.VClass && (
                           <div>
-                            <p className="text-sm text-slate-400">Vehicle Class</p>
-                            <p className="text-slate-200 font-medium">{selectedVehicle.fueleconomy.VClass}</p>
+                            <p className="text-sm au-dash-text-subtle">Vehicle Class</p>
+                            <p className="au-dash-text font-medium">{selectedVehicle.fueleconomy.VClass}</p>
                           </div>
                         )}
                         {selectedVehicle.fueleconomy.drive && (
                           <div>
-                            <p className="text-sm text-slate-400">Drive</p>
-                            <p className="text-slate-200 font-medium">{selectedVehicle.fueleconomy.drive}</p>
+                            <p className="text-sm au-dash-text-subtle">Drive</p>
+                            <p className="au-dash-text font-medium">{selectedVehicle.fueleconomy.drive}</p>
                           </div>
                         )}
                       </div>
                       {selectedVehicle.fueleconomy.emissionsList && selectedVehicle.fueleconomy.emissionsList.emissionsInfo && (
                         <div>
-                          <p className="text-sm text-slate-400 mb-2">Emissions Standards</p>
+                          <p className="text-sm au-dash-text-subtle mb-2">Emissions Standards</p>
                           <div className="space-y-2">
                             {selectedVehicle.fueleconomy.emissionsList.emissionsInfo.map((emission, idx) => (
-                              <div key={idx} className="bg-slate-800/50 rounded p-3">
-                                <p className="text-slate-200 font-medium">{emission.stdText}</p>
-                                <p className="text-xs text-slate-400">Score: {emission.score} • Sales Area: {emission.salesArea}</p>
+                              <div key={idx} className="au-dash-card rounded p-3">
+                                <p className="au-dash-text font-medium">{emission.stdText}</p>
+                                <p className="text-xs au-dash-text-subtle">Score: {emission.score} • Sales Area: {emission.salesArea}</p>
                               </div>
                             ))}
                           </div>
@@ -936,21 +936,21 @@ export default function VehiclesTable() {
                 )}
 
                 {/* Timestamps */}
-                <div className="bg-slate-900/50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-slate-200 mb-4">Timestamps</h3>
+                <div className="bg-[rgba(8,10,18,0.35)] rounded-lg p-6">
+                  <h3 className="au-dash-card-title mb-4">Timestamps</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-slate-400">Created At</p>
-                      <p className="text-slate-200 font-medium">{formatDate(selectedVehicle.createdAt)}</p>
+                      <p className="text-sm au-dash-text-subtle">Created At</p>
+                      <p className="au-dash-text font-medium">{formatDate(selectedVehicle.createdAt)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-400">Updated At</p>
-                      <p className="text-slate-200 font-medium">{formatDate(selectedVehicle.updatedAt)}</p>
+                      <p className="text-sm au-dash-text-subtle">Updated At</p>
+                      <p className="au-dash-text font-medium">{formatDate(selectedVehicle.updatedAt)}</p>
                     </div>
                     {selectedVehicle.lastFetched && (
                       <div>
-                        <p className="text-sm text-slate-400">Last Fetched</p>
-                        <p className="text-slate-200 font-medium">{formatDate(selectedVehicle.lastFetched)}</p>
+                        <p className="text-sm au-dash-text-subtle">Last Fetched</p>
+                        <p className="au-dash-text font-medium">{formatDate(selectedVehicle.lastFetched)}</p>
                       </div>
                     )}
                   </div>
@@ -965,18 +965,18 @@ export default function VehiclesTable() {
       {imagesModalOpen && selectedVehicle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="
-            bg-slate-800 border border-slate-700/50 rounded-lg
+            au-dash-modal/50 rounded-lg
             w-full max-w-6xl max-h-[90vh] overflow-hidden
             flex flex-col
             shadow-2xl
           ">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+            <div className="flex items-center justify-between p-6 au-dash-tabs-underline">
               <div>
-                <h2 className="text-2xl font-bold text-slate-200">
+                <h2 className="text-2xl font-bold au-dash-text">
                   Vehicle Images
                 </h2>
-                <p className="text-slate-400 mt-1">
+                <p className="au-dash-subtitle">
                   {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
                 </p>
               </div>
@@ -988,8 +988,8 @@ export default function VehiclesTable() {
                 }}
                 className="
                   p-2 rounded-lg
-                  text-slate-400 hover:text-slate-200
-                  hover:bg-slate-700/50
+                  au-dash-text-subtle hover:au-dash-text
+                  hover:au-dash-badge
                   transition-colors
                 "
               >
@@ -1002,7 +1002,7 @@ export default function VehiclesTable() {
               {imagesLoading ? (
                 <div className="p-12 text-center">
                   <div className="w-8 h-8 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto" />
-                  <p className="text-slate-400 mt-4">Loading images...</p>
+                  <p className="au-dash-text-subtle mt-4">Loading images...</p>
                 </div>
               ) : imagesError ? (
                 <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/50 text-red-400">
@@ -1010,36 +1010,36 @@ export default function VehiclesTable() {
                 </div>
               ) : !vehicleImages || !vehicleImages.availableProducts || vehicleImages.availableProducts.length === 0 ? (
                 <div className="p-12 text-center">
-                  <FaImages className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-400">No images available for this vehicle</p>
+                  <FaImages className="w-12 h-12 au-dash-text-subtle mx-auto mb-4" />
+                  <p className="au-dash-text-subtle">No images available for this vehicle</p>
                 </div>
               ) : (
                 <div className="space-y-8">
                   {/* Summary Stats */}
-                  <div className="bg-slate-900/50 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-slate-200 mb-4">Summary</h3>
+                  <div className="bg-[rgba(8,10,18,0.35)] rounded-lg p-6">
+                    <h3 className="au-dash-card-title mb-4">Summary</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-sm text-slate-400">Total Products</p>
-                        <p className="text-2xl font-bold text-slate-200">
+                        <p className="text-sm au-dash-text-subtle">Total Products</p>
+                        <p className="text-2xl font-bold au-dash-text">
                           {vehicleImages.totalProducts || vehicleImages.availableProducts?.length || 0}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">Products with Images</p>
+                        <p className="text-sm au-dash-text-subtle">Products with Images</p>
                         <p className="text-2xl font-bold text-purple-400">
                           {vehicleImages.productsWithImages || 0}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">Total Formats</p>
-                        <p className="text-2xl font-bold text-slate-200">
+                        <p className="text-sm au-dash-text-subtle">Total Formats</p>
+                        <p className="text-2xl font-bold au-dash-text">
                           {vehicleImages.availableProducts?.reduce((sum, p) => sum + (p.formats?.length || 0), 0) || 0}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-400">Total Assets</p>
-                        <p className="text-2xl font-bold text-blue-400">
+                        <p className="text-sm au-dash-text-subtle">Total Assets</p>
+                        <p className="text-2xl font-bold au-dash-text-strong">
                           {vehicleImages.availableProducts?.reduce((sum, p) => 
                             sum + (p.formats?.reduce((fSum, f) => fSum + (f.assetsCount || 0), 0) || 0), 0
                           ) || 0}
@@ -1054,13 +1054,13 @@ export default function VehiclesTable() {
                     const totalAssets = product.formats?.reduce((sum, f) => sum + (f.assetsCount || 0), 0) || 0;
                     
                     return (
-                      <div key={productIdx} className="bg-slate-900/50 rounded-lg p-6">
+                      <div key={productIdx} className="bg-[rgba(8,10,18,0.35)] rounded-lg p-6">
                         <div className="flex items-center justify-between mb-4">
                           <div>
-                            <h3 className="text-lg font-semibold text-slate-200">
+                            <h3 className="au-dash-card-title">
                               {product.name || `Product ${product.id}`}
                             </h3>
-                            <p className="text-sm text-slate-400 mt-1">
+                            <p className="text-sm au-dash-subtitle">
                               Type: {product.type || 'N/A'} • {totalFormats} formats • {totalAssets} total assets
                             </p>
                           </div>
@@ -1073,20 +1073,20 @@ export default function VehiclesTable() {
                         {product.formats && product.formats.length > 0 ? (
                           <div className="space-y-4">
                             {product.formats.map((format, formatIdx) => (
-                              <div key={formatIdx} className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                              <div key={formatIdx} className="au-dash-card rounded-lg p-4 ">
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex-1">
-                                    <h4 className="text-md font-medium text-slate-200">
+                                    <h4 className="text-md font-medium au-dash-text">
                                       {format.name || format.code || `Format ${format.id}`}
                                     </h4>
                                     <div className="flex items-center gap-4 mt-2">
                                       {format.width && format.height && (
-                                        <span className="text-xs text-slate-400">
+                                        <span className="text-xs au-dash-text-subtle">
                                           {format.width} × {format.height}
                                         </span>
                                       )}
                                       {format.code && (
-                                        <span className="text-xs text-slate-500 font-mono">
+                                        <span className="text-xs au-dash-text-subtle font-mono">
                                           {format.code}
                                         </span>
                                       )}
@@ -1094,18 +1094,18 @@ export default function VehiclesTable() {
                                   </div>
                                   <div className="flex items-center gap-4">
                                     <div className="text-right">
-                                      <p className="text-2xl font-bold text-blue-400">
+                                      <p className="text-2xl font-bold au-dash-text-strong">
                                         {format.assetsCount || 0}
                                       </p>
-                                      <p className="text-xs text-slate-400">assets</p>
+                                      <p className="text-xs au-dash-text-subtle">assets</p>
                                     </div>
                                   </div>
                                 </div>
 
                                 {/* Show color breakdown if available */}
                                 {format.assets && format.assets.length > 0 && format.assets[0]?.shotCode?.color ? (
-                                  <div className="mt-4 pt-4 border-t border-slate-700/50">
-                                    <p className="text-xs text-slate-400 mb-3">Available Colors:</p>
+                                  <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                                    <p className="text-xs au-dash-text-subtle mb-3">Available Colors:</p>
                                     <div className="flex flex-wrap gap-2">
                                       {(() => {
                                         const colorMap = new Map();
@@ -1125,17 +1125,17 @@ export default function VehiclesTable() {
                                         return Array.from(colorMap.values()).map((item, idx) => (
                                           <div
                                             key={idx}
-                                            className="flex items-center gap-2 px-3 py-2 bg-slate-900/50 rounded-lg border border-slate-700/50"
+                                            className="flex items-center gap-2 px-3 py-2 bg-[rgba(8,10,18,0.35)] rounded-lg "
                                           >
                                             <div
-                                              className="w-6 h-6 rounded border border-slate-600 flex-shrink-0"
+                                              className="w-6 h-6 rounded border border-white/25 flex-shrink-0"
                                               style={{ backgroundColor: `#${item.color.rgb1}` }}
                                             />
                                             <div>
-                                              <p className="text-xs font-medium text-slate-200">
+                                              <p className="text-xs font-medium au-dash-text">
                                                 {item.color.simple_name}
                                               </p>
-                                              <p className="text-xs text-slate-400">
+                                              <p className="text-xs au-dash-text-subtle">
                                                 {item.count} images
                                               </p>
                                             </div>
@@ -1145,21 +1145,21 @@ export default function VehiclesTable() {
                                     </div>
                                   </div>
                                 ) : format.assetsCount > 0 ? (
-                                  <div className="mt-4 pt-4 border-t border-slate-700/50">
-                                    <p className="text-xs text-slate-400">
+                                  <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                                    <p className="text-xs au-dash-text-subtle">
                                       {format.assetsCount} image{format.assetsCount !== 1 ? 's' : ''} available
                                     </p>
                                   </div>
                                 ) : (
-                                  <div className="mt-4 pt-4 border-t border-slate-700/50">
-                                    <p className="text-xs text-slate-400 italic">No assets available</p>
+                                  <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                                    <p className="text-xs au-dash-text-subtle italic">No assets available</p>
                                   </div>
                                 )}
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-slate-400 text-sm">No formats available</p>
+                          <p className="au-dash-text-subtle text-sm">No formats available</p>
                         )}
                       </div>
                     );

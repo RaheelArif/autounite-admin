@@ -82,20 +82,20 @@ export default function DataTableCard({
   };
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-        <h2 className="text-lg font-semibold text-slate-200">{title}</h2>
+    <div className="au-dash-card au-dash-table-card au-dash-table-card--pad">
+      <div className="au-dash-table-card__header !p-0 !border-0 mb-3">
+        <h2 className="au-dash-card-title">{title}</h2>
         <div className="flex items-center gap-2">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search..."
-            className="px-2 py-1.5 text-xs bg-slate-900/60 border border-slate-700/60 rounded text-slate-100"
+            className="au-dash-input au-dash-table-card__search"
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs bg-slate-900/60 border border-slate-700/60 rounded text-slate-100"
+            className="au-dash-select !w-auto !min-h-0 text-xs py-1.5 px-2"
           >
             {statuses.map((status) => (
               <option key={status} value={status}>
@@ -104,10 +104,7 @@ export default function DataTableCard({
             ))}
           </select>
           {onRefresh ? (
-            <button
-              onClick={onRefresh}
-              className="px-3 py-1.5 text-xs bg-slate-700/70 rounded text-slate-200 hover:brightness-110 cursor-pointer"
-            >
+            <button type="button" onClick={onRefresh} className="au-dash-btn au-dash-btn--sm">
               Refresh
             </button>
           ) : null}
@@ -115,17 +112,17 @@ export default function DataTableCard({
       </div>
 
       {filteredRows.length === 0 ? (
-        <p className="text-sm text-slate-400">{emptyText}</p>
+        <p className="text-sm au-dash-text-subtle">{emptyText}</p>
       ) : (
         <div className="space-y-2 overflow-x-auto">
-          <div className="hidden md:grid grid-cols-12 gap-3 text-[11px] uppercase tracking-wide text-slate-400 px-3 min-w-[920px]">
+          <div className="hidden md:grid grid-cols-12 gap-3 text-[11px] uppercase tracking-wide au-dash-text-subtle px-3 min-w-[920px]">
             {columns.map((col) => (
               <div key={col.key} className={`${col.className || 'col-span-3'} min-w-0`}>
                 {col.sortable ? (
                   <button
                     type="button"
                     onClick={() => onSort(col.key)}
-                    className="cursor-pointer hover:text-slate-200"
+                    className="au-dash-table-sort cursor-pointer"
                   >
                     {col.label}
                     {sortKey === col.key ? ` ${sortDir === 'asc' ? '▲' : '▼'}` : ''}
@@ -142,14 +139,14 @@ export default function DataTableCard({
             const key = String(row?.[rowKey] || '');
             const isExpanded = expandedRowKey === key;
             return (
-              <div key={key} className="bg-slate-900/50 border border-slate-700/40 rounded p-3 min-w-[920px]">
+              <div key={key} className="au-dash-row-surface min-w-[920px]">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
                   {columns.map((col) => (
                     <div key={col.key} className={`${col.className || 'md:col-span-3'} min-w-0`}>
-                      <p className="md:hidden text-[11px] uppercase tracking-wide text-slate-500 mb-1">
+                      <p className="md:hidden text-[11px] uppercase tracking-wide au-dash-text-subtle mb-1">
                         {col.label}
                       </p>
-                      <div className="text-sm text-slate-200 break-words whitespace-normal">
+                      <div className="text-sm au-dash-text break-words whitespace-normal">
                         {typeof col.render === 'function'
                           ? col.render(row)
                           : typeof col.value === 'function'
@@ -164,7 +161,7 @@ export default function DataTableCard({
                       <button
                         type="button"
                         onClick={() => setExpandedRowKey((prev) => (prev === key ? '' : key))}
-                        className="px-2 py-1 text-xs rounded bg-blue-600/80 text-white hover:brightness-110 cursor-pointer"
+                        className="au-dash-btn au-dash-btn--sm"
                       >
                         {isExpanded ? 'Hide' : 'Open'}
                       </button>
@@ -172,7 +169,7 @@ export default function DataTableCard({
                   </div>
                 </div>
                 {renderExpanded && isExpanded ? (
-                  <div className="mt-2 p-2 rounded border border-slate-700/60 bg-slate-950/60">
+                  <div className="au-dash-row-expanded">
                     {renderExpanded(row)}
                   </div>
                 ) : null}

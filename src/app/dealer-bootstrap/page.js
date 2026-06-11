@@ -9,15 +9,14 @@ import {
   getCnmLeadExceptions,
   getDealerAuditLogs,
   getDealerReleaseGates,
+  getDealerSecurityChecklist,
   getDealerStores,
   getOpsVerificationRequests,
   updateCnmLeadExceptionStatus,
   updateOpsVerificationStatus,
 } from '@/lib/dealerBootstrap';
 
-const btnInteractive =
-  'transition-all duration-200 ease-out hover:brightness-110 hover:shadow-md hover:shadow-blue-500/20 cursor-pointer active:scale-[0.98]';
-const btnDisabled = 'disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:brightness-100 disabled:hover:shadow-none disabled:active:scale-100';
+const btnDisabled = 'disabled:opacity-60 disabled:cursor-not-allowed';
 
 function DealerBootstrapPageContent() {
   const SECTION_TABS = [
@@ -41,6 +40,7 @@ function DealerBootstrapPageContent() {
   const [cnmExceptions, setCnmExceptions] = useState([]);
   const [opsRequests, setOpsRequests] = useState([]);
   const [releaseGates, setReleaseGates] = useState(null);
+  const [securityChecklist, setSecurityChecklist] = useState(null);
   const [adminActionReason, setAdminActionReason] = useState('ops_triage_update');
   const [activeSection, setActiveSection] = useState('bootstrap');
   const [operationsInboxTab, setOperationsInboxTab] = useState('verification');
@@ -51,12 +51,13 @@ function DealerBootstrapPageContent() {
   const loadData = async () => {
     setError('');
     try {
-      const [storesRes, logsRes, exceptionsRes, opsRes, gatesRes] = await Promise.all([
+      const [storesRes, logsRes, exceptionsRes, opsRes, gatesRes, securityRes] = await Promise.all([
         getDealerStores(),
         getDealerAuditLogs(),
         getCnmLeadExceptions(),
         getOpsVerificationRequests(),
         getDealerReleaseGates(),
+        getDealerSecurityChecklist(),
       ]);
       const nextStores = storesRes?.data?.stores || [];
       setStores(nextStores);
@@ -64,6 +65,7 @@ function DealerBootstrapPageContent() {
       setCnmExceptions(exceptionsRes?.data || []);
       setOpsRequests(opsRes?.data || []);
       setReleaseGates(gatesRes?.data || null);
+      setSecurityChecklist(securityRes?.data || null);
       if (!selectedStoreId && nextStores.length > 0) {
         setSelectedStoreId(nextStores[0]._id);
       }
@@ -177,7 +179,7 @@ function DealerBootstrapPageContent() {
       label: 'Reference',
       className: 'md:col-span-6',
       render: (item) => (
-        <p className="text-xs text-slate-300">
+        <p className="text-xs au-dash-text-muted">
           Store: {item.storeId || 'n/a'} | Ref: {item.sourceRefType || 'n/a'} ({item.sourceRefId || 'n/a'})
         </p>
       ),
@@ -189,7 +191,7 @@ function DealerBootstrapPageContent() {
       className: 'md:col-span-2',
       sortable: true,
       render: (item) => (
-        <span className="text-[11px] px-2 py-0.5 rounded bg-slate-700/80 text-slate-200">
+        <span className="au-dash-badge">
           {item.status || 'open'}
         </span>
       ),
@@ -204,10 +206,10 @@ function DealerBootstrapPageContent() {
       className: 'md:col-span-6',
       render: (item) => (
         <div className="space-y-1">
-          <p className="text-xs text-slate-300">
+          <p className="text-xs au-dash-text-muted">
             Dealer: {item.dealerNameHint || 'n/a'} | Lead: {item.cnmLeadId || 'n/a'}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs au-dash-text-subtle">
             Store: {item.dealerStoreId || 'n/a'} | Created:{' '}
             {item.createdAt ? new Date(item.createdAt).toLocaleString() : 'n/a'}
           </p>
@@ -222,7 +224,7 @@ function DealerBootstrapPageContent() {
       className: 'md:col-span-1',
       sortable: true,
       render: (item) => (
-        <span className="text-[11px] px-2 py-0.5 rounded bg-slate-700/80 text-slate-200">
+        <span className="au-dash-badge">
           {item.status || 'open'}
         </span>
       ),
@@ -240,7 +242,7 @@ function DealerBootstrapPageContent() {
       key: 'actor',
       label: 'Actor',
       className: 'md:col-span-2',
-      render: (item) => <p className="text-xs text-slate-300">{item.actorEmail || 'n/a'}</p>,
+      render: (item) => <p className="text-xs au-dash-text-muted">{item.actorEmail || 'n/a'}</p>,
       searchValue: (item) => `${item.actorEmail || ''} ${item.actorRole || ''}`,
     },
     {
@@ -248,7 +250,7 @@ function DealerBootstrapPageContent() {
       label: 'Reason',
       className: 'md:col-span-3',
       sortable: true,
-      render: (item) => <p className="text-xs text-slate-300">{item.reason || 'n/a'}</p>,
+      render: (item) => <p className="text-xs au-dash-text-muted">{item.reason || 'n/a'}</p>,
       searchValue: (item) => `${item.reason || ''}`,
     },
     {
@@ -256,7 +258,7 @@ function DealerBootstrapPageContent() {
       label: 'Object',
       className: 'md:col-span-3',
       render: (item) => (
-        <p className="text-xs text-slate-300">
+        <p className="text-xs au-dash-text-muted">
           {item.objectType || 'n/a'} ({item.objectId || 'n/a'})
         </p>
       ),
@@ -269,7 +271,7 @@ function DealerBootstrapPageContent() {
       sortable: true,
       sortValue: (item) => new Date(item.createdAt || 0).getTime(),
       render: (item) => (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs au-dash-text-subtle">
           {item.createdAt ? new Date(item.createdAt).toLocaleString() : 'n/a'}
         </p>
       ),
@@ -280,25 +282,14 @@ function DealerBootstrapPageContent() {
   const cnmOpenCount = cnmExceptions.filter((item) => item.status === 'open').length;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500 bg-clip-text text-transparent">
-          Dealer Bootstrap
-        </h1>
-        <p className="text-slate-400 mt-1">Create dealer stores, assign users, and review audit trail.</p>
-      </div>
-
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-2 flex flex-wrap gap-2">
+    <div className="au-dash-page">
+      <div className="au-dash-card au-dash-tab-bar">
         {SECTION_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveSection(tab.id)}
-            className={`px-3 py-1.5 rounded text-sm ${
-              activeSection === tab.id
-                ? 'bg-blue-600/80 text-white'
-                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700/80'
-            } ${btnInteractive}`}
+            className={`au-dash-tab ${activeSection === tab.id ? 'au-dash-tab--active' : ''}`}
           >
             {tab.label}
           </button>
@@ -317,49 +308,49 @@ function DealerBootstrapPageContent() {
 
       {activeSection === 'bootstrap' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <form onSubmit={onCreateStore} className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-3">
-            <h2 className="text-lg font-semibold text-slate-200">Create Store</h2>
+          <form onSubmit={onCreateStore} className="au-dash-card p-6 space-y-3">
+            <h2 className="au-dash-card-title">Create Store</h2>
             <input
               value={storeName}
               onChange={(e) => setStoreName(e.target.value)}
               required
               placeholder="Store name"
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+              className="au-dash-input"
             />
             <input
               value={legalName}
               onChange={(e) => setLegalName(e.target.value)}
               placeholder="Legal name (optional)"
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+              className="au-dash-input"
             />
             <input
               value={primaryContactEmail}
               onChange={(e) => setPrimaryContactEmail(e.target.value)}
               placeholder="Primary contact email (optional)"
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+              className="au-dash-input"
             />
             <input
               value={storeReason}
               onChange={(e) => setStoreReason(e.target.value)}
               placeholder="Reason"
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+              className="au-dash-input"
             />
             <button
               type="submit"
               disabled={loading}
-              className={`px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg ${btnInteractive} ${btnDisabled}`}
+              className={`au-dash-btn ${btnDisabled}`}
             >
               Create Store
             </button>
           </form>
 
-          <form onSubmit={onAssignUser} className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-3">
-            <h2 className="text-lg font-semibold text-slate-200">Assign User</h2>
+          <form onSubmit={onAssignUser} className="au-dash-card p-6 space-y-3">
+            <h2 className="au-dash-card-title">Assign User</h2>
             <select
               value={selectedStoreId}
               onChange={(e) => setSelectedStoreId(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+              className="au-dash-input"
             >
               <option value="">Select store</option>
               {stores.map((store) => (
@@ -374,12 +365,12 @@ function DealerBootstrapPageContent() {
               type="email"
               required
               placeholder="User email"
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+              className="au-dash-input"
             />
             <select
               value={mappingRole}
               onChange={(e) => setMappingRole(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+              className="au-dash-input"
             >
               <option value="dealer_admin">dealer_admin</option>
               <option value="manager">manager</option>
@@ -391,12 +382,12 @@ function DealerBootstrapPageContent() {
               value={assignReason}
               onChange={(e) => setAssignReason(e.target.value)}
               placeholder="Reason"
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+              className="au-dash-input"
             />
             <button
               type="submit"
               disabled={loading}
-              className={`px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg ${btnInteractive} ${btnDisabled}`}
+              className={`au-dash-btn ${btnDisabled}`}
             >
               Assign User
             </button>
@@ -405,15 +396,15 @@ function DealerBootstrapPageContent() {
       ) : null}
 
       {activeSection === 'operations' ? (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-3">
-        <h2 className="text-lg font-semibold text-slate-200">Action Reason (Audit Note)</h2>
+      <div className="au-dash-card p-6 space-y-3">
+        <h2 className="au-dash-card-title">Action Reason (Audit Note)</h2>
         <input
           value={adminActionReason}
           onChange={(e) => setAdminActionReason(e.target.value)}
           placeholder="Write why you are changing queue status (minimum 6 chars)"
-          className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-slate-100"
+          className="au-dash-input"
         />
-        <p className="text-xs text-slate-400">
+        <p className="text-xs au-dash-text-subtle">
           This note is saved in audit logs whenever you click Review, Resolve, or Reopen.
         </p>
         <p className={`text-xs ${String(adminActionReason || '').trim().length >= 6 ? 'text-emerald-300' : 'text-amber-300'}`}>
@@ -423,9 +414,9 @@ function DealerBootstrapPageContent() {
       ) : null}
 
       {activeSection === 'operations' ? (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4">
+      <div className="au-dash-card p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-200">Release Gates</h2>
+          <h2 className="au-dash-card-title au-dash-card-title--sm">Release Gates</h2>
           <span
             className={`text-[11px] px-2 py-0.5 rounded ${
               releaseGates?.pass ? 'bg-emerald-600/70 text-white' : 'bg-amber-600/70 text-white'
@@ -434,7 +425,7 @@ function DealerBootstrapPageContent() {
             {releaseGates?.pass ? 'pass' : 'needs review'}
           </span>
         </div>
-        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-300">
+        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs au-dash-text-muted">
           {Object.entries(releaseGates?.checks || {}).map(([k, v]) => (
             <p key={k}>
               <span className={v ? 'text-emerald-300' : 'text-rose-300'}>{v ? 'PASS' : 'FAIL'}</span> - {k}
@@ -445,32 +436,52 @@ function DealerBootstrapPageContent() {
       ) : null}
 
       {activeSection === 'operations' ? (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="au-dash-card p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="au-dash-card-title au-dash-card-title--sm">Security Checklist</h2>
+          <span
+            className={`text-[11px] px-2 py-0.5 rounded ${
+              securityChecklist?.pass ? 'bg-emerald-600/70 text-white' : 'bg-amber-600/70 text-white'
+            }`}
+          >
+            {securityChecklist?.pass ? 'pass' : 'needs review'}
+          </span>
+        </div>
+        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs au-dash-text-muted">
+          {Object.entries(securityChecklist?.checks || {}).map(([k, v]) => (
+            <p key={k}>
+              <span className={v ? 'text-emerald-300' : 'text-rose-300'}>{v ? 'PASS' : 'FAIL'}</span> - {k}
+            </p>
+          ))}
+        </div>
+        {securityChecklist?.metrics ? (
+          <p className="text-xs au-dash-text-subtle mt-2">
+            Reason coverage: {securityChecklist.metrics.reasonCoveragePct ?? 'n/a'}% | Sampled logs:{' '}
+            {securityChecklist.metrics.sampledAdminMutationLogs ?? 0}
+          </p>
+        ) : null}
+      </div>
+      ) : null}
+
+      {activeSection === 'operations' ? (
+      <div className="au-dash-card p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setOperationsInboxTab('verification')}
-            className={`px-3 py-1.5 rounded text-sm ${
-              operationsInboxTab === 'verification'
-                ? 'bg-blue-600/80 text-white'
-                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700/80'
-            } ${btnInteractive}`}
+            className={`au-dash-tab ${operationsInboxTab === 'verification' ? 'au-dash-tab--active' : ''}`}
           >
             Verification Queue ({opsRequests.length})
           </button>
           <button
             type="button"
             onClick={() => setOperationsInboxTab('cnm')}
-            className={`px-3 py-1.5 rounded text-sm ${
-              operationsInboxTab === 'cnm'
-                ? 'bg-blue-600/80 text-white'
-                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700/80'
-            } ${btnInteractive}`}
+            className={`au-dash-tab ${operationsInboxTab === 'cnm' ? 'au-dash-tab--active' : ''}`}
           >
             CNM Exceptions ({cnmExceptions.length})
           </button>
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="text-xs au-dash-text-subtle">
           Open items: Verification {opsOpenCount} | CNM {cnmOpenCount}
         </div>
       </div>
@@ -488,15 +499,15 @@ function DealerBootstrapPageContent() {
         }
         renderExpanded={(item) => (
           <>
-            <p className="text-xs text-slate-300">Role: {item.actorRole || 'n/a'}</p>
-            <p className="text-xs text-slate-300 mt-1">Reason: {item.reason || 'n/a'}</p>
+            <p className="text-xs au-dash-text-muted">Role: {item.actorRole || 'n/a'}</p>
+            <p className="text-xs au-dash-text-muted mt-1">Reason: {item.reason || 'n/a'}</p>
             {item.beforeValue ? (
-              <pre className="mt-2 text-[11px] text-slate-300 whitespace-pre-wrap break-words">
+              <pre className="mt-2 text-[11px] au-dash-text-muted whitespace-pre-wrap break-words">
                 {`Before:\n${JSON.stringify(item.beforeValue, null, 2)}`}
               </pre>
             ) : null}
             {item.afterValue ? (
-              <pre className="mt-2 text-[11px] text-slate-300 whitespace-pre-wrap break-words">
+              <pre className="mt-2 text-[11px] au-dash-text-muted whitespace-pre-wrap break-words">
                 {`After:\n${JSON.stringify(item.afterValue, null, 2)}`}
               </pre>
             ) : null}
@@ -520,7 +531,7 @@ function DealerBootstrapPageContent() {
               onClick={() => onUpdateOpsStatus(item._id, 'in_review')}
               className={`px-2 py-1 text-xs rounded bg-amber-600/80 text-white ${
                 item.status === 'in_review' ? 'opacity-60 cursor-not-allowed' : ''
-              } ${btnInteractive} ${btnDisabled}`}
+              } ${btnDisabled}`}
             >
               Review
             </button>
@@ -530,7 +541,7 @@ function DealerBootstrapPageContent() {
               onClick={() => onUpdateOpsStatus(item._id, 'resolved')}
               className={`px-2 py-1 text-xs rounded bg-emerald-600/80 text-white ${
                 item.status === 'resolved' ? 'opacity-60 cursor-not-allowed' : ''
-              } ${btnInteractive} ${btnDisabled}`}
+              } ${btnDisabled}`}
             >
               Resolve
             </button>
@@ -538,9 +549,9 @@ function DealerBootstrapPageContent() {
               type="button"
               disabled={loading || item.status === 'open'}
               onClick={() => onUpdateOpsStatus(item._id, 'open')}
-              className={`px-2 py-1 text-xs rounded bg-slate-600/80 text-white ${
+              className={`au-dash-btn au-dash-btn--sm ${
                 item.status === 'open' ? 'opacity-60 cursor-not-allowed' : ''
-              } ${btnInteractive} ${btnDisabled}`}
+              } ${btnDisabled}`}
             >
               Reopen
             </button>
@@ -564,7 +575,7 @@ function DealerBootstrapPageContent() {
               onClick={() => onUpdateExceptionStatus(item._id, 'in_review')}
               className={`px-2 py-1 text-xs rounded bg-amber-600/80 text-white ${
                 item.status === 'in_review' ? 'opacity-60 cursor-not-allowed' : ''
-              } ${btnInteractive} ${btnDisabled}`}
+              } ${btnDisabled}`}
             >
               Review
             </button>
@@ -574,7 +585,7 @@ function DealerBootstrapPageContent() {
               onClick={() => onUpdateExceptionStatus(item._id, 'resolved')}
               className={`px-2 py-1 text-xs rounded bg-emerald-600/80 text-white ${
                 item.status === 'resolved' ? 'opacity-60 cursor-not-allowed' : ''
-              } ${btnInteractive} ${btnDisabled}`}
+              } ${btnDisabled}`}
             >
               Resolve
             </button>
@@ -582,9 +593,9 @@ function DealerBootstrapPageContent() {
               type="button"
               disabled={loading || item.status === 'open'}
               onClick={() => onUpdateExceptionStatus(item._id, 'open')}
-              className={`px-2 py-1 text-xs rounded bg-slate-600/80 text-white ${
+              className={`au-dash-btn au-dash-btn--sm ${
                 item.status === 'open' ? 'opacity-60 cursor-not-allowed' : ''
-              } ${btnInteractive} ${btnDisabled}`}
+              } ${btnDisabled}`}
             >
               Reopen
             </button>
@@ -595,16 +606,16 @@ function DealerBootstrapPageContent() {
             {item.details?.message ? (
               <p className="text-xs text-amber-300/90">Detail: {item.details.message}</p>
             ) : null}
-            <p className="text-xs text-slate-300 mt-1">
-              CNM Lead ID: <span className="text-slate-100">{item.cnmLeadId || 'n/a'}</span>
+            <p className="text-xs au-dash-text-muted mt-1">
+              CNM Lead ID: <span className="au-dash-text-strong">{item.cnmLeadId || 'n/a'}</span>
             </p>
-            <p className="text-xs text-slate-300 mt-1">
-              Exception ID: <span className="text-slate-100">{item._id}</span>
+            <p className="text-xs au-dash-text-muted mt-1">
+              Exception ID: <span className="au-dash-text-strong">{item._id}</span>
             </p>
-            <p className="text-xs text-slate-300 mt-1">
-              Dealer Store ID: <span className="text-slate-100">{item.dealerStoreId || 'n/a'}</span>
+            <p className="text-xs au-dash-text-muted mt-1">
+              Dealer Store ID: <span className="au-dash-text-strong">{item.dealerStoreId || 'n/a'}</span>
             </p>
-            <pre className="mt-2 text-[11px] text-slate-300 whitespace-pre-wrap break-words">
+            <pre className="mt-2 text-[11px] au-dash-text-muted whitespace-pre-wrap break-words">
               {JSON.stringify(item.details || {}, null, 2)}
             </pre>
           </>

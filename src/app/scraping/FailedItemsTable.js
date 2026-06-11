@@ -97,12 +97,12 @@ export default function FailedItemsTable() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="au-dash-page">
       {/* Header with Retry All Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-200">Failed Items</h2>
-          <p className="text-slate-400 mt-1">
+          <h2 className="text-xl font-semibold au-dash-text">Failed Items</h2>
+          <p className="au-dash-subtitle">
             View and retry failed scraping items
           </p>
         </div>
@@ -126,28 +126,28 @@ export default function FailedItemsTable() {
       </div>
 
       {/* Filters Section - Collapsible */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         <button
           onClick={() => setFiltersExpanded(!filtersExpanded)}
-          className="w-full flex items-center justify-between p-6 hover:bg-slate-800/30 transition-colors"
+          className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <FaFilter className="w-5 h-5 text-blue-400" />
-            <h2 className="text-xl font-semibold text-slate-200">Filters</h2>
+            <FaFilter className="w-5 h-5 au-dash-text-strong" />
+            <h2 className="text-xl font-semibold au-dash-text">Filters</h2>
           </div>
           {filtersExpanded ? (
-            <FaChevronUp className="w-5 h-5 text-slate-400" />
+            <FaChevronUp className="w-5 h-5 au-dash-text-subtle" />
           ) : (
-            <FaChevronDown className="w-5 h-5 text-slate-400" />
+            <FaChevronDown className="w-5 h-5 au-dash-text-subtle" />
           )}
         </button>
         
         {filtersExpanded && (
-          <div className="px-6 pb-6 border-t border-slate-700/50">
+          <div className="px-6 pb-6 border-t border-[rgba(255,255,255,0.1)]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Step Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Step
             </label>
             <select
@@ -155,11 +155,11 @@ export default function FailedItemsTable() {
               onChange={(e) => setStep(e.target.value)}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value="all">All Steps</option>
@@ -171,7 +171,7 @@ export default function FailedItemsTable() {
 
           {/* Limit Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium au-dash-text-muted mb-2">
               Results Per Page
             </label>
             <select
@@ -179,11 +179,11 @@ export default function FailedItemsTable() {
               onChange={(e) => setLimit(Number(e.target.value))}
               className="
                 w-full px-4 py-2
-                bg-slate-900/50 border border-slate-700/50
+                au-dash-input
                 rounded-lg
-                text-slate-100
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50
-                focus:border-blue-500/50
+                au-dash-text-strong
+                focus:outline-none focus:ring-2 focus:ring-white/25
+                
               "
             >
               <option value={25}>25</option>
@@ -204,43 +204,43 @@ export default function FailedItemsTable() {
       )}
 
       {/* Failed Items Table */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
+      <div className="au-dash-card overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto" />
-            <p className="text-slate-400 mt-4">Loading failed items...</p>
+            <div className="au-dash-spinner mx-auto" />
+            <p className="au-dash-text-subtle mt-4">Loading failed items...</p>
           </div>
         ) : failed.length === 0 ? (
           <div className="p-12 text-center">
             <FaCheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
-            <p className="text-slate-400">No failed items found</p>
+            <p className="au-dash-text-subtle">No failed items found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-900/50 border-b border-slate-700/50">
+              <thead className="au-dash-table-head">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Year</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Make</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Model</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Step</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Error</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Retries</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Failed At</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Year</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Make</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Model</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Step</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Error</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Retries</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Failed At</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-[rgba(255,255,255,0.1)]">
                 {failed.map((item) => (
                   <tr
                     key={item._id}
-                    className="hover:bg-slate-800/30 transition-colors"
+                    className="hover:bg-white/5 transition-colors"
                   >
-                    <td className="px-6 py-4 text-sm text-slate-300">{item.year || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-200 font-medium">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">{item.year || '-'}</td>
+                    <td className="px-6 py-4 text-sm au-dash-text font-medium">
                       {item.makeName || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-200 font-medium">
+                    <td className="px-6 py-4 text-sm au-dash-text font-medium">
                       {item.modelName || '-'}
                     </td>
                     <td className="px-6 py-4">
@@ -256,10 +256,10 @@ export default function FailedItemsTable() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-300">
+                    <td className="px-6 py-4 text-sm au-dash-text-muted">
                       {item.retryCount || 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
+                    <td className="px-6 py-4 text-sm au-dash-text-subtle">
                       {formatDate(item.updatedAt)}
                     </td>
                     <td className="px-6 py-4">
@@ -268,8 +268,8 @@ export default function FailedItemsTable() {
                         disabled={retrying}
                         className="
                           px-4 py-2
-                          bg-blue-500/20 hover:bg-blue-500/30
-                          text-blue-300 font-medium text-sm
+                          bg-white/15 hover:bg-white/22
+                          au-dash-text font-medium text-sm
                           rounded-lg
                           disabled:opacity-50 disabled:cursor-not-allowed
                           transition-all duration-300

@@ -92,3 +92,12 @@ export const getDealerReleaseGates = async () => {
   }
   return data;
 };
+
+export const getDealerSecurityChecklist = async () => {
+  const response = await authenticatedFetch('/api/v1/dealer/admin/security-checklist');
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to fetch security checklist');
+  }
+  return data;
+};

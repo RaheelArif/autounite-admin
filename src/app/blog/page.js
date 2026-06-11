@@ -30,23 +30,9 @@ export default function BlogPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div>
-          <h1 className="
-            text-3xl font-bold
-            bg-gradient-to-r from-blue-400 via-blue-300 to-blue-500
-            bg-clip-text text-transparent
-          ">
-            Blog
-          </h1>
-          <p className="text-slate-400 mt-1">
-            Manage articles, categories, and tags
-          </p>
-        </div>
-
+      <div className="au-dash-page">
         {/* Tabs */}
-        <div className="border-b border-slate-700/50">
+        <div className="au-dash-tabs-underline">
           <nav className="flex space-x-1 overflow-x-auto">
             {tabs.map((tab) => (
               <button
@@ -58,8 +44,8 @@ export default function BlogPage() {
                   whitespace-nowrap
                   ${
                     activeTab === tab.id
-                      ? 'border-blue-400 text-blue-400'
-                      : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600'
+                      ? 'au-dash-tab-underline--active'
+                      : 'au-dash-tab-underline'
                   }
                 `}
               >
@@ -69,10 +55,7 @@ export default function BlogPage() {
           </nav>
         </div>
 
-        {/* Tab Content */}
-        <div className="mt-6">
-          {renderContent()}
-        </div>
+        {renderContent()}
       </div>
     </DashboardLayout>
   );
