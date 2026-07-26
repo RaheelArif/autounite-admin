@@ -2,7 +2,7 @@
  * Admin OS backgrounds — /public/background/
  *
  * Pack: Admin OS 100 Final (single control-room scene for all admin surfaces)
- * - Desktop: 1920×1080 — dashboard, tables, scraping, users, blog, search QA, dealer bootstrap
+ * - Desktop: 1920×1080 — dashboard, tables, catalog, users, blog, search QA, dealer bootstrap
  * - Mobile:  1080×1920 — same routes on narrow screens
  *
  * Recommended delivery format per README: webp. Mobile falls back to desktop if missing.

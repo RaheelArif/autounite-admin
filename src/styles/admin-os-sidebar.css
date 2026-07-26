@@ -1,0 +1,282 @@
+/**
+ * Admin sidebar — same visual system as AutoUnite v2 OsSidebar (os-shell.css).
+ */
+
+:root {
+  --au-dash-sidebar-w: 212px;
+
+  --os-sidebar-surface-top: #10131d;
+  --os-sidebar-surface: #0a0c14;
+  --os-sidebar-surface-floor: #070910;
+  --os-sidebar-accent-purple: #8b5cf6;
+  --os-sidebar-accent-blue: #3b82f6;
+  --os-sidebar-accent-indigo: #6366f1;
+  --os-sidebar-gradient-active: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--os-sidebar-accent-purple) 38%, #0c1018) 0%,
+    color-mix(in srgb, var(--os-sidebar-accent-blue) 30%, #0c1018) 48%,
+    color-mix(in srgb, var(--os-sidebar-accent-indigo) 24%, #10182a) 100%
+  );
+  --os-sidebar-gradient-brand: linear-gradient(
+    135deg,
+    color-mix(in srgb, #4c1d95 68%, #0a0c14) 0%,
+    color-mix(in srgb, #5b21b6 62%, #0c1018) 48%,
+    color-mix(in srgb, #3730a3 58%, #10141f) 100%
+  );
+
+  --os-sidebar-width: 212px;
+  --os-sidebar-pad-x: 14px;
+  --os-sidebar-logo-w: 68px;
+  --os-sidebar-logo-pt: 30px;
+  --os-sidebar-logo-pb: 20px;
+  --os-nav-row-h: 44px;
+  --os-nav-gap: 6px;
+  --os-nav-icon: 20px;
+  --os-nav-icon-gap: 15px;
+  --os-nav-label: 15px;
+  --os-nav-pill-radius: 12px;
+  --os-nav-divider-my: 14px;
+  --os-nav-section-gap: 18px;
+  --os-social-bottom: 28px;
+  --os-social-label: 12px;
+}
+
+@media (min-width: 1024px) and (min-height: 920px) {
+  :root {
+    --os-sidebar-logo-pt: 36px;
+    --os-sidebar-logo-pb: 24px;
+    --os-nav-row-h: 50px;
+    --os-nav-gap: 8px;
+    --os-nav-divider-my: 18px;
+    --os-social-bottom: 36px;
+  }
+}
+
+/* Admin always shows desktop rail */
+.os-sidebar.au-admin-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  width: var(--au-dash-sidebar-w);
+  padding: 0 var(--os-sidebar-pad-x) var(--os-social-bottom);
+  border-right: none;
+  background: #000000;
+  box-shadow: inset -1px 0 0 color-mix(in srgb, #ffffff 3%, transparent);
+  overflow: hidden;
+}
+
+.os-sidebar.au-admin-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--os-sidebar-accent-blue) 11%, transparent) 0%,
+    color-mix(in srgb, var(--os-sidebar-accent-indigo) 5%, transparent) 38%,
+    transparent 56%,
+    color-mix(in srgb, var(--os-sidebar-accent-blue) 7%, transparent) 100%
+  );
+  pointer-events: none;
+}
+
+.os-sidebar.au-admin-sidebar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--os-sidebar-accent-blue) 16%, transparent) 50%,
+    transparent 100%
+  );
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.au-admin-sidebar .os-sidebar-logo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
+  padding: var(--os-sidebar-logo-pt) 0 var(--os-sidebar-logo-pb);
+  background: transparent;
+}
+
+.au-admin-sidebar .os-sidebar-logo::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--os-sidebar-accent-purple) 12%, transparent) 50%,
+    transparent 100%
+  );
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.au-admin-sidebar .os-sidebar-logo-img {
+  width: var(--os-sidebar-logo-w);
+  height: auto;
+  object-fit: contain;
+}
+
+.au-admin-sidebar .os-sidebar-nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--os-nav-gap);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 8px;
+}
+
+.au-admin-sidebar .os-sidebar-divider {
+  height: 1px;
+  width: calc(100% - 16px);
+  margin: var(--os-nav-divider-my) auto;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 18%,
+    color-mix(in srgb, var(--os-sidebar-accent-purple) 28%, rgba(255, 255, 255, 0.14)) 50%,
+    rgba(255, 255, 255, 0.1) 82%,
+    transparent 100%
+  );
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.au-admin-sidebar .os-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--os-nav-icon-gap);
+  min-height: var(--os-nav-row-h);
+  height: var(--os-nav-row-h);
+  width: 100%;
+  flex-shrink: 0;
+  padding: 0 14px;
+  border-radius: var(--os-nav-pill-radius);
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: var(--os-nav-label);
+  font-weight: 500;
+  letter-spacing: 0.015em;
+  line-height: 1.2;
+  text-decoration: none;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.au-admin-sidebar .os-nav-link .os-nav-icon {
+  width: var(--os-nav-icon);
+  height: var(--os-nav-icon);
+  flex-shrink: 0;
+  opacity: 0.78;
+  transition: opacity 180ms ease;
+}
+
+.au-admin-sidebar .os-nav-link:hover:not(.is-active) {
+  color: rgba(255, 255, 255, 0.96);
+  background: color-mix(in srgb, var(--os-sidebar-accent-purple) 10%, rgba(255, 255, 255, 0.05));
+  border-color: color-mix(in srgb, var(--os-sidebar-accent-purple) 18%, rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.au-admin-sidebar .os-nav-link:hover:not(.is-active) .os-nav-icon {
+  opacity: 1;
+}
+
+.au-admin-sidebar .os-nav-link.is-active {
+  color: rgba(255, 255, 255, 0.96);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-color: color-mix(in srgb, var(--os-sidebar-accent-purple) 26%, transparent);
+  background: var(--os-sidebar-gradient-brand);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 8%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #000000 28%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--os-sidebar-accent-purple) 14%, transparent),
+    0 4px 14px color-mix(in srgb, var(--os-sidebar-accent-purple) 14%, transparent);
+}
+
+.au-admin-sidebar .os-nav-link.is-active .os-nav-icon {
+  opacity: 1;
+}
+
+.au-admin-sidebar .os-nav-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.au-admin-sidebar .os-sidebar-footer {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  padding-top: clamp(8px, 1.2dvh, 16px);
+  flex-shrink: 0;
+}
+
+.au-admin-sidebar .os-sidebar-footer::before {
+  content: "";
+  display: block;
+  height: 1px;
+  width: calc(100% - 8px);
+  margin: 0 auto clamp(8px, 1.2dvh, 12px);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--os-sidebar-accent-purple) 10%, transparent) 50%,
+    transparent 100%
+  );
+  opacity: 0.35;
+}
+
+.au-admin-sidebar .os-sidebar-follow-label {
+  margin: 0;
+  padding-left: 2px;
+  font-size: var(--os-social-label);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.34);
+  text-align: center;
+}
+
+/* Keep main/navbar offset in sync with v2 rail width */
+.au-dash-navbar {
+  background: #0a0c14;
+  border-bottom: 1px solid color-mix(in srgb, var(--os-sidebar-accent-purple) 16%, transparent);
+}
+
+.au-dash-navbar-title {
+  color: rgba(255, 255, 255, 0.96);
+}

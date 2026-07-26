@@ -7,7 +7,7 @@ import Navbar from './Navbar';
 import QueriesPage from '@/app/queries/page';
 import UsersPageContent from '@/app/users/UsersPageContent';
 import RequestPageContent from '@/app/request/RequestPageContent';
-import ScrapingPage from '@/app/scraping/page';
+import CatalogVehiclesPanel from '@/app/catalog/CatalogVehiclesPanel';
 import BlogPage from '@/app/blog/page';
 import DashboardPageContent from '@/app/DashboardPageContent';
 import AdminPageLayout from './AdminPageLayout';
@@ -16,15 +16,13 @@ import { getAdminNavTitle } from '@/config/adminNav';
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  // Initialize active tab - will be updated by useEffect based on pathname
   const [activeTab, setActiveTab] = useState('search-governance');
 
-  // Update active tab based on pathname
   useEffect(() => {
     if (pathname === '/' || pathname === '/search-governance') {
       setActiveTab('search-governance');
-    } else if (pathname === '/scraping') {
-      setActiveTab('scraping');
+    } else if (pathname === '/catalog' || pathname === '/scraping') {
+      setActiveTab('catalog');
     } else if (pathname === '/blog') {
       setActiveTab('blog');
     } else if (pathname === '/request') {
@@ -40,11 +38,17 @@ export default function DashboardLayout({ children }) {
     }
   }, [pathname]);
 
-  // Handle tab change and navigation
+  // Old /scraping bookmarks → catalog v2
+  useEffect(() => {
+    if (pathname === '/scraping') {
+      router.replace('/catalog');
+    }
+  }, [pathname, router]);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    if (tab === 'scraping') {
-      router.push('/scraping');
+    if (tab === 'catalog') {
+      router.push('/catalog');
     } else if (tab === 'blog') {
       router.push('/blog');
     } else if (tab === 'users') {
@@ -60,20 +64,15 @@ export default function DashboardLayout({ children }) {
     }
   };
 
-  // Render content based on pathname
-  // If children are provided (page wraps itself), use children
-  // Otherwise, render based on pathname
   const renderContent = () => {
-    // If children exist, use them (page has wrapped itself)
     if (children) {
       return children;
     }
-    
-    // Otherwise, render based on pathname (fallback)
+
     if (pathname === '/' || pathname === '/search-governance') {
       return null;
-    } else if (pathname === '/scraping') {
-      return <ScrapingPage />;
+    } else if (pathname === '/catalog') {
+      return <CatalogVehiclesPanel />;
     } else if (pathname === '/blog') {
       return <BlogPage />;
     } else if (pathname === '/request') {
@@ -81,23 +80,18 @@ export default function DashboardLayout({ children }) {
     } else if (pathname === '/queries') {
       return <QueriesPage />;
     } else if (pathname === '/users') {
-      // Users page now uses DashboardPageContent with tabs
       return <DashboardPageContent />;
     }
     return null;
   };
 
   return (
-    <AdminPageLayout overlayOpacity={0}>
-      {/* Sidebar */}
+    <AdminPageLayout overlayOpacity={0.62}>
       <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
 
-      {/* Main Content Area */}
       <div className="au-dash-main transition-all duration-300 ease-in-out">
-        {/* Navbar */}
         <Navbar pageTitle={getAdminNavTitle(activeTab)} />
 
-        {/* Content Area - Scrollable */}
         <main className="au-dash-content overflow-y-auto custom-scrollbar">
           {renderContent()}
         </main>
@@ -105,4 +99,3 @@ export default function DashboardLayout({ children }) {
     </AdminPageLayout>
   );
 }
-

@@ -2,6 +2,8 @@
 @import "../styles/admin-auth-theme.css";
 @import "../styles/admin-auth-responsive.css";
 @import "../styles/admin-dashboard-theme.css";
+@import "../styles/admin-catalog.css";
+@import "../styles/admin-os-sidebar.css";
 
 :root {
   --background: #080a12;
