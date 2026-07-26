@@ -17,16 +17,38 @@ export function humanizePackageCode(code) {
     .replace(/\bPkg\b/gi, 'Package');
 }
 
-export function enrichLabel(source) {
+/** Admin-facing enrichment status (technical source/classification stay in View). */
+export function enrichStatusLabel(source, classification) {
   if (source === 'autodev') return 'Enriched';
-  if (source === 'autodev_empty') return 'Empty closed';
-  return source || 'Missing';
+  if (source === 'autodev_empty') {
+    const c = String(classification || '').toLowerCase();
+    if (c === 'vin_unresolved') return 'Source unresolved';
+    if (c === 'no_usable_depth') return 'No package data';
+    return 'Needs review';
+  }
+  return 'Pending';
 }
 
+/** @deprecated prefer enrichStatusLabel(source, classification) */
+export function enrichLabel(source) {
+  return enrichStatusLabel(source, null);
+}
+
+/** Human label for classification; raw code still shown in details. */
 export function classificationLabel(value) {
   const raw = String(value || '').trim();
   if (!raw) return '—';
+  const key = raw.toLowerCase();
+  if (key === 'packages_confirmed') return 'Packages confirmed';
+  if (key === 'vin_unresolved') return 'Source unresolved';
+  if (key === 'no_usable_depth') return 'No package data';
   return raw
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+export function enrichBadgeClass(source) {
+  if (source === 'autodev') return 'au-cat-enrich--ok';
+  if (source === 'autodev_empty') return 'au-cat-enrich--empty';
+  return 'au-cat-enrich--missing';
 }

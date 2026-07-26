@@ -9,7 +9,6 @@ import {
   FaExclamationTriangle,
   FaEye,
   FaFilter,
-  FaSearch,
   FaSort,
   FaSortDown,
   FaSortUp,
@@ -26,18 +25,16 @@ import {
 } from '@/lib/catalog';
 import {
   classificationLabel,
-  enrichLabel,
+  enrichBadgeClass,
+  enrichStatusLabel,
   humanizePackageCode,
 } from '@/lib/humanizePackage';
 
-function enrichBadge(source) {
-  if (source === 'autodev') {
-    return { label: 'Enriched', className: 'au-cat-enrich--ok' };
-  }
-  if (source === 'autodev_empty') {
-    return { label: 'Empty closed', className: 'au-cat-enrich--empty' };
-  }
-  return { label: 'Missing', className: 'au-cat-enrich--missing' };
+function enrichBadge(source, classification) {
+  return {
+    label: enrichStatusLabel(source, classification),
+    className: enrichBadgeClass(source),
+  };
 }
 
 function groupMissingModels(models) {
@@ -353,7 +350,8 @@ export default function CatalogVehiclesPanel() {
               Vehicle catalog
             </h2>
             <p className="au-cat-hero__sub">
-              Browse inventory by year → make → model. Market check auto-scans current + next year.
+              Browse inventory by year → make → model. Use Check market gaps anytime — manually
+              triggered, detect-only (nothing written). Default years: current + next.
             </p>
           </div>
           <div className="flex flex-col items-stretch sm:items-end gap-1.5">
@@ -364,9 +362,9 @@ export default function CatalogVehiclesPanel() {
               className="au-cat-btn-primary"
             >
               <FaSync className={`w-3.5 h-3.5 ${marketLoading ? 'animate-spin' : ''}`} />
-              {marketLoading ? 'Checking…' : 'Check new in market'}
+              {marketLoading ? 'Checking…' : 'Check market gaps'}
             </button>
-            <span className="au-cat-btn-hint">Auto years: {checkYearsLabel}</span>
+            <span className="au-cat-btn-hint">Market check: {checkYearsLabel.replace(' + ', '–')}</span>
           </div>
         </div>
 
@@ -451,7 +449,8 @@ export default function CatalogVehiclesPanel() {
                   ) : null}
 
                   <p className="au-cat-footer-note">
-                    Detect only · {result.lastCheckedAt ? new Date(result.lastCheckedAt).toLocaleString() : '—'}
+                    Manually triggered · detect only · nothing written ·{' '}
+                    {result.lastCheckedAt ? new Date(result.lastCheckedAt).toLocaleString() : '—'}
                   </p>
                 </div>
               );
@@ -535,7 +534,7 @@ export default function CatalogVehiclesPanel() {
               </select>
             </div>
             <div>
-              <label className="au-cat-field-label">Enrich status</label>
+              <label className="au-cat-field-label">Enrichment status</label>
               <select
                 value={enrichStatus}
                 onChange={(e) => { setEnrichStatus(e.target.value); setPage(1); }}
@@ -544,15 +543,14 @@ export default function CatalogVehiclesPanel() {
               >
                 <option value="">All</option>
                 <option value="autodev">Enriched</option>
-                <option value="autodev_empty">Empty closed</option>
-                <option value="missing">Missing</option>
+                <option value="autodev_empty">Needs review / no package data</option>
+                <option value="missing">Pending</option>
               </select>
             </div>
             <div className="md:col-span-2">
               <label className="au-cat-field-label">Search</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 au-dash-text-subtle" />
                   <input
                     type="text"
                     value={search}
@@ -560,7 +558,7 @@ export default function CatalogVehiclesPanel() {
                     onKeyDown={(e) => { if (e.key === 'Enter') handleApplySearch(); }}
                     disabled={!make}
                     placeholder="Make, model, trim, Fuel API id…"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg au-dash-input au-dash-text-strong placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[rgba(124,58,237,0.45)]"
+                    className="w-full px-3 py-2 rounded-lg au-dash-input au-dash-text-strong placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[rgba(124,58,237,0.45)]"
                   />
                 </div>
                 <button type="button" onClick={handleApplySearch} disabled={!make} className="au-cat-btn-primary disabled:opacity-40" style={{ minHeight: '2.5rem', padding: '0.5rem 0.85rem' }}>
@@ -595,7 +593,8 @@ export default function CatalogVehiclesPanel() {
               <span className="au-dash-text-muted">Select a year and make to load vehicles.</span>
             ) : (
               <>
-                Showing <span className="au-dash-text-strong font-semibold">{vehicles.length}</span> of{' '}
+                Matching vehicles:{' '}
+                <span className="au-dash-text-strong font-semibold">{vehicles.length}</span> of{' '}
                 <span className="au-dash-text-strong font-semibold">{totalVehicles}</span>
                 {model ? (
                   <>
@@ -653,9 +652,10 @@ export default function CatalogVehiclesPanel() {
                   </th>
                 ))}
                 <th className="px-4 py-3 font-medium">Body</th>
+                <th className="px-4 py-3 font-medium whitespace-nowrap">Fuel ID</th>
                 <th className="px-4 py-3 font-medium">EPA</th>
-                <th className="px-4 py-3 font-medium">Enrich</th>
-                <th className="px-4 py-3 font-medium">Pkgs</th>
+                <th className="px-4 py-3 font-medium">Enrichment</th>
+                <th className="px-4 py-3 font-medium">Packages</th>
                 <th className="px-4 py-3 font-medium">
                   <button
                     type="button"
@@ -672,32 +672,43 @@ export default function CatalogVehiclesPanel() {
             <tbody>
               {vehiclesLoading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center au-dash-text-muted">
+                  <td colSpan={11} className="px-4 py-10 text-center au-dash-text-muted">
                     Loading vehicles…
                   </td>
                 </tr>
               ) : !year || !make ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center au-dash-text-muted">
+                  <td colSpan={11} className="px-4 py-10 text-center au-dash-text-muted">
                     Choose year and make to browse the catalog.
                   </td>
                 </tr>
               ) : vehicles.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center au-dash-text-muted">
+                  <td colSpan={11} className="px-4 py-10 text-center au-dash-text-muted">
                     No vehicles match these filters.
                   </td>
                 </tr>
               ) : (
                 vehicles.map((row) => {
-                  const badge = enrichBadge(row.enrich?.source);
+                  const badge = enrichBadge(row.enrich?.source, row.enrich?.classification);
                   return (
                     <tr key={row.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                       <td className="px-4 py-3 au-dash-text-strong whitespace-nowrap">{row.year}</td>
                       <td className="px-4 py-3 au-dash-text">{row.make}</td>
                       <td className="px-4 py-3 au-dash-text">{row.model}</td>
                       <td className="px-4 py-3 au-dash-text-muted">{row.trim || '—'}</td>
-                      <td className="px-4 py-3 au-dash-text-muted">{row.bodyType || '—'}</td>
+                      <td className="px-4 py-3 au-dash-text-muted">
+                        <div>{row.bodyType || '—'}</div>
+                        {row.fuelApiBodyType &&
+                        String(row.fuelApiBodyType).toLowerCase() !== String(row.bodyType || '').toLowerCase() ? (
+                          <div className="text-[10px] au-dash-text-subtle mt-0.5" title="Raw Fuel API bodytype">
+                            Fuel: {row.fuelApiBodyType}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 au-dash-text-strong font-mono text-xs whitespace-nowrap">
+                        {row.fuelApiVehicleId || '—'}
+                      </td>
                       <td className="px-4 py-3">
                         {row.dataSource?.fueleconomy ? (
                           <FaCheckCircle className="w-4 h-4 text-emerald-400" title="EPA mapped" />
@@ -709,9 +720,6 @@ export default function CatalogVehiclesPanel() {
                         <span className={`inline-flex text-xs px-2 py-0.5 rounded ${badge.className}`}>
                           {badge.label}
                         </span>
-                        {row.enrich?.classification ? (
-                          <div className="text-[11px] au-dash-text-subtle mt-1">{row.enrich.classification}</div>
-                        ) : null}
                       </td>
                       <td className="px-4 py-3 au-dash-text-strong">{row.enrich?.packageFlags ?? 0}</td>
                       <td className="px-4 py-3 au-dash-text-muted whitespace-nowrap text-xs">
@@ -803,7 +811,7 @@ export default function CatalogVehiclesPanel() {
                             : 'au-cat-modal__pill--info'
                       }`}
                     >
-                      {enrichLabel(detail.enrich?.source)}
+                      {enrichStatusLabel(detail.enrich?.source, detail.enrich?.classification)}
                     </span>
                     {detail.enrich?.classification ? (
                       <span className="au-cat-modal__pill au-cat-modal__pill--purple">
@@ -828,12 +836,30 @@ export default function CatalogVehiclesPanel() {
                       <span className="au-cat-modal__field-value">{detail.fueleconomyVehicleId || '—'}</span>
                     </div>
                     <div className="au-cat-modal__field">
-                      <span className="au-cat-modal__field-label">Body</span>
+                      <span className="au-cat-modal__field-label">Identity key</span>
+                      <span className="au-cat-modal__field-value" style={{ fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                        {detail.vehicleIdentityKey || '—'}
+                      </span>
+                    </div>
+                    <div className="au-cat-modal__field">
+                      <span className="au-cat-modal__field-label">Body (stored)</span>
                       <span className="au-cat-modal__field-value">{detail.bodyType || '—'}</span>
+                    </div>
+                    <div className="au-cat-modal__field">
+                      <span className="au-cat-modal__field-label">Body (Fuel raw)</span>
+                      <span className="au-cat-modal__field-value">{detail.fuelApiBodyType || '—'}</span>
                     </div>
                     <div className="au-cat-modal__field">
                       <span className="au-cat-modal__field-label">Drivetrain</span>
                       <span className="au-cat-modal__field-value">{detail.drivetrain || '—'}</span>
+                    </div>
+                    <div className="au-cat-modal__field">
+                      <span className="au-cat-modal__field-label">Technical enrich reason</span>
+                      <span className="au-cat-modal__field-value" style={{ fontSize: '0.75rem' }}>
+                        {[detail.enrich?.source || 'none', detail.enrich?.classification || '—']
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
                     </div>
                     <div className="au-cat-modal__field">
                       <span className="au-cat-modal__field-label">Enriched at</span>
