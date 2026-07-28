@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-/** Default admin landing — Admin OS Phase 1 shell */
-export default function Home() {
+/** Admin OS Phase 1 entry → Dealers tab */
+export default function AdminOsIndexPage() {
   const router = useRouter();
 
   useEffect(() => {

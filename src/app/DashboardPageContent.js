@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { 
   FaUsers, 
   FaPaperPlane,
@@ -13,10 +14,18 @@ import { getUserStats } from '@/lib/users';
 import { getUserRequestStats } from '@/lib/userRequests';
 
 export default function DashboardPageContent() {
-  const [activeTab, setActiveTab] = useState('request');
+  const searchParams = useSearchParams();
+  const tabParam = String(searchParams?.get('tab') || '').toLowerCase();
+  const initialTab = tabParam === 'users' ? 'users' : tabParam === 'request' || tabParam === 'requests' ? 'request' : 'request';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [userStats, setUserStats] = useState(null);
   const [requestStats, setRequestStats] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (tabParam === 'users') setActiveTab('users');
+    if (tabParam === 'request' || tabParam === 'requests') setActiveTab('request');
+  }, [tabParam]);
 
   // Fetch dashboard statistics
   useEffect(() => {

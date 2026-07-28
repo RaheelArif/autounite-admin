@@ -23,7 +23,7 @@ export default function AuthGuard({ children }) {
           try {
             // Verify token is still valid
             await getCurrentUser();
-            router.push('/search-governance');
+            router.push('/admin/dealers');
             return;
           } catch (error) {
             // Token is invalid, allow access to login page

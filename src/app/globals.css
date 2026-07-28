@@ -4,6 +4,7 @@
 @import "../styles/admin-dashboard-theme.css";
 @import "../styles/admin-catalog.css";
 @import "../styles/admin-os-sidebar.css";
+/* Admin OS shell CSS loads from app/admin/layout.js + AdminOsShell (route-scoped). */
 
 :root {
   --background: #080a12;

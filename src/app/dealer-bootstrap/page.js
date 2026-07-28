@@ -18,7 +18,7 @@ import {
 
 const btnDisabled = 'disabled:opacity-60 disabled:cursor-not-allowed';
 
-function DealerBootstrapPageContent() {
+export function DealerBootstrapPageContent({ initialSection, initialInbox } = {}) {
   const SECTION_TABS = [
     { id: 'bootstrap', label: 'Bootstrap' },
     { id: 'operations', label: 'Operations' },
@@ -42,11 +42,34 @@ function DealerBootstrapPageContent() {
   const [releaseGates, setReleaseGates] = useState(null);
   const [securityChecklist, setSecurityChecklist] = useState(null);
   const [adminActionReason, setAdminActionReason] = useState('ops_triage_update');
-  const [activeSection, setActiveSection] = useState('bootstrap');
-  const [operationsInboxTab, setOperationsInboxTab] = useState('verification');
+  const [activeSection, setActiveSection] = useState(initialSection || 'bootstrap');
+  const [operationsInboxTab, setOperationsInboxTab] = useState(initialInbox || 'verification');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (initialSection === 'bootstrap' || initialSection === 'operations' || initialSection === 'audit') {
+      setActiveSection(initialSection);
+    }
+    if (initialInbox === 'cnm' || initialInbox === 'verification') {
+      setOperationsInboxTab(initialInbox);
+    }
+  }, [initialSection, initialInbox]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (initialSection || initialInbox) return;
+    const params = new URLSearchParams(window.location.search);
+    const section = String(params.get('section') || '').toLowerCase();
+    const inbox = String(params.get('inbox') || '').toLowerCase();
+    if (section === 'bootstrap' || section === 'operations' || section === 'audit') {
+      setActiveSection(section);
+    }
+    if (inbox === 'cnm' || inbox === 'verification') {
+      setOperationsInboxTab(inbox);
+    }
+  }, [initialSection, initialInbox]);
 
   const loadData = async () => {
     setError('');

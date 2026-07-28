@@ -9,8 +9,8 @@ import AdminPageLayout from '@/components/AdminPageLayout';
 import AdminAuthGlassCard from '@/components/AdminAuthGlassCard';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin@example.com');
-  const [password, setPassword] = useState('adminpassword123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      router.push('/search-governance');
+      router.push('/admin/dealers');
     }
   }, [router]);
 
@@ -29,7 +29,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/search-governance');
+      router.push('/admin/dealers');
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

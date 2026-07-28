@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
@@ -8,7 +8,7 @@ import QueriesPage from '@/app/queries/page';
 import UsersPageContent from '@/app/users/UsersPageContent';
 import RequestPageContent from '@/app/request/RequestPageContent';
 import CatalogVehiclesPanel from '@/app/catalog/CatalogVehiclesPanel';
-import BlogPage from '@/app/blog/page';
+import BlogPageContent from '@/app/blog/BlogPageContent';
 import DashboardPageContent from '@/app/DashboardPageContent';
 import AdminPageLayout from './AdminPageLayout';
 import { getAdminNavTitle } from '@/config/adminNav';
@@ -74,13 +74,17 @@ export default function DashboardLayout({ children }) {
     } else if (pathname === '/catalog') {
       return <CatalogVehiclesPanel />;
     } else if (pathname === '/blog') {
-      return <BlogPage />;
+      return <BlogPageContent />;
     } else if (pathname === '/request') {
       return <RequestPageContent />;
     } else if (pathname === '/queries') {
       return <QueriesPage />;
     } else if (pathname === '/users') {
-      return <DashboardPageContent />;
+      return (
+        <Suspense fallback={<div className="au-dash-page p-6">Loading users…</div>}>
+          <DashboardPageContent />
+        </Suspense>
+      );
     }
     return null;
   };

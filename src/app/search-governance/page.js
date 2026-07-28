@@ -166,7 +166,7 @@ function GovernanceRowDetail({ row }) {
   );
 }
 
-export default function SearchGovernancePage() {
+export function SearchGovernancePageContent() {
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -265,7 +265,6 @@ export default function SearchGovernancePage() {
   const activeSynonymCount = synonyms.filter((s) => s.isActive).length;
 
   return (
-    <DashboardLayout>
       <div className="au-dash-page">
         {!isAdmin() && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-amber-200 text-sm">
@@ -735,6 +734,13 @@ export default function SearchGovernancePage() {
           )}
         </CollapsibleSection>
       </div>
+  );
+}
+
+export default function SearchGovernancePage() {
+  return (
+    <DashboardLayout>
+      <SearchGovernancePageContent />
     </DashboardLayout>
   );
 }
