@@ -75,10 +75,14 @@ export default function LoginPage() {
                 <input
                   id="email"
                   type="email"
+                  name="admin-email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  autoComplete="email"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="au-auth-input au-auth-input--with-icon"
                   placeholder="you@example.com"
                 />
@@ -96,10 +100,11 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
+                  name="admin-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   className="au-auth-input au-auth-input--with-icon au-auth-input--with-toggle"
                   placeholder="••••••••"
                 />
