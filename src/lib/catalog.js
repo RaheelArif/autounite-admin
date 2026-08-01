@@ -16,15 +16,16 @@ async function catalogFetch(path) {
 
 export const getCatalogYears = async () => catalogFetch('/years');
 
-export const getCatalogMakes = async (year) => {
-  const params = new URLSearchParams({ year: String(year) });
+export const getCatalogMakes = async (year, { canonicalScope = 'shopper' } = {}) => {
+  const params = new URLSearchParams({ year: String(year), canonicalScope });
   return catalogFetch(`/makes?${params}`);
 };
 
-export const getCatalogModels = async ({ year, make }) => {
+export const getCatalogModels = async ({ year, make, canonicalScope = 'shopper' }) => {
   const params = new URLSearchParams({
     year: String(year),
     make: String(make),
+    canonicalScope,
   });
   return catalogFetch(`/models?${params}`);
 };
@@ -39,6 +40,7 @@ export const getCatalogVehicles = async (filters = {}) => {
     search,
     enrichStatus,
     hasFueleconomy,
+    canonicalScope = 'shopper',
     sortBy = 'trim',
     sortOrder = 'asc',
   } = filters;
@@ -51,6 +53,7 @@ export const getCatalogVehicles = async (filters = {}) => {
   params.set('limit', String(limit));
   params.set('sortBy', sortBy);
   params.set('sortOrder', sortOrder);
+  params.set('canonicalScope', canonicalScope || 'shopper');
   if (search) params.set('search', search);
   if (enrichStatus) params.set('enrichStatus', enrichStatus);
   if (hasFueleconomy !== undefined && hasFueleconomy !== null && hasFueleconomy !== '') {

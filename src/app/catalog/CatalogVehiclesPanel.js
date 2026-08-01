@@ -37,6 +37,16 @@ function enrichBadge(source, classification) {
   };
 }
 
+function canonicalBadge(isCanonical) {
+  if (isCanonical === false) {
+    return { label: 'Dup Fuel ID', className: 'au-cat-badge au-cat-badge--warn' };
+  }
+  if (isCanonical === true) {
+    return { label: 'Shopper', className: 'au-cat-badge au-cat-badge--ok' };
+  }
+  return { label: 'Unique', className: 'au-cat-badge au-cat-badge--muted' };
+}
+
 function groupMissingModels(models) {
   const map = new Map();
   for (const row of models || []) {
@@ -77,6 +87,8 @@ export default function CatalogVehiclesPanel() {
   const [search, setSearch] = useState('');
   const [searchApplied, setSearchApplied] = useState('');
   const [enrichStatus, setEnrichStatus] = useState('');
+  /** shopper = same as research (hide non-canonical); all = every Fuel ID row */
+  const [canonicalScope, setCanonicalScope] = useState('shopper');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [sortBy, setSortBy] = useState('trim');
@@ -133,7 +145,7 @@ export default function CatalogVehiclesPanel() {
       setMakesLoading(true);
       setError('');
       try {
-        const res = await getCatalogMakes(year);
+        const res = await getCatalogMakes(year, { canonicalScope });
         if (!cancelled) setMakes(res.data || []);
       } catch (err) {
         if (!cancelled) {
@@ -147,7 +159,7 @@ export default function CatalogVehiclesPanel() {
     return () => {
       cancelled = true;
     };
-  }, [year]);
+  }, [year, canonicalScope]);
 
   useEffect(() => {
     if (!year || !make) {
@@ -159,7 +171,7 @@ export default function CatalogVehiclesPanel() {
       setModelsLoading(true);
       setError('');
       try {
-        const res = await getCatalogModels({ year, make });
+        const res = await getCatalogModels({ year, make, canonicalScope });
         if (!cancelled) setModels(res.data || []);
       } catch (err) {
         if (!cancelled) {
@@ -173,7 +185,7 @@ export default function CatalogVehiclesPanel() {
     return () => {
       cancelled = true;
     };
-  }, [year, make]);
+  }, [year, make, canonicalScope]);
 
   const fetchVehicles = useCallback(async () => {
     if (!year || !make) {
@@ -192,6 +204,7 @@ export default function CatalogVehiclesPanel() {
         limit,
         search: searchApplied || undefined,
         enrichStatus: enrichStatus || undefined,
+        canonicalScope,
         sortBy,
         sortOrder,
       });
@@ -204,7 +217,7 @@ export default function CatalogVehiclesPanel() {
     } finally {
       setVehiclesLoading(false);
     }
-  }, [year, make, model, page, limit, searchApplied, enrichStatus, sortBy, sortOrder]);
+  }, [year, make, model, page, limit, searchApplied, enrichStatus, canonicalScope, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchVehicles();
@@ -254,6 +267,7 @@ export default function CatalogVehiclesPanel() {
     setSearch('');
     setSearchApplied('');
     setEnrichStatus('');
+    setCanonicalScope('shopper');
     setPage(1);
     setLimit(50);
     setSortBy('trim');
@@ -490,7 +504,7 @@ export default function CatalogVehiclesPanel() {
             <FaFilter className="w-3.5 h-3.5" />
             Browse filters
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3">
             <div>
               <label className="au-cat-field-label">Year *</label>
               <select
@@ -545,6 +559,17 @@ export default function CatalogVehiclesPanel() {
                 <option value="autodev">Enriched</option>
                 <option value="autodev_empty">Needs review / no package data</option>
                 <option value="missing">Pending</option>
+              </select>
+            </div>
+            <div>
+              <label className="au-cat-field-label">Catalog view</label>
+              <select
+                value={canonicalScope}
+                onChange={(e) => { setCanonicalScope(e.target.value); setPage(1); }}
+                className="w-full px-3 py-2 rounded-lg au-dash-input au-dash-text-strong focus:outline-none focus:ring-2 focus:ring-[rgba(124,58,237,0.45)]"
+              >
+                <option value="shopper">Shopper view (1 per trim)</option>
+                <option value="all">All Fuel IDs (incl. dups)</option>
               </select>
             </div>
             <div className="md:col-span-2">
@@ -607,6 +632,10 @@ export default function CatalogVehiclesPanel() {
                     for <span className="au-dash-text-strong">{year} {make}</span>
                   </>
                 )}
+                <span className="au-dash-text-muted">
+                  {' '}
+                  · {canonicalScope === 'all' ? 'all Fuel IDs' : 'shopper view'}
+                </span>
               </>
             )}
           </div>
@@ -653,6 +682,7 @@ export default function CatalogVehiclesPanel() {
                 ))}
                 <th className="px-4 py-3 font-medium">Body</th>
                 <th className="px-4 py-3 font-medium whitespace-nowrap">Fuel ID</th>
+                <th className="px-4 py-3 font-medium">Shopper</th>
                 <th className="px-4 py-3 font-medium">EPA</th>
                 <th className="px-4 py-3 font-medium">Enrichment</th>
                 <th className="px-4 py-3 font-medium">Packages</th>
@@ -672,25 +702,26 @@ export default function CatalogVehiclesPanel() {
             <tbody>
               {vehiclesLoading ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-10 text-center au-dash-text-muted">
+                  <td colSpan={12} className="px-4 py-10 text-center au-dash-text-muted">
                     Loading vehicles…
                   </td>
                 </tr>
               ) : !year || !make ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-10 text-center au-dash-text-muted">
+                  <td colSpan={12} className="px-4 py-10 text-center au-dash-text-muted">
                     Choose year and make to browse the catalog.
                   </td>
                 </tr>
               ) : vehicles.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-10 text-center au-dash-text-muted">
+                  <td colSpan={12} className="px-4 py-10 text-center au-dash-text-muted">
                     No vehicles match these filters.
                   </td>
                 </tr>
               ) : (
                 vehicles.map((row) => {
                   const badge = enrichBadge(row.enrich?.source, row.enrich?.classification);
+                  const shopper = canonicalBadge(row.isCanonical);
                   return (
                     <tr key={row.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                       <td className="px-4 py-3 au-dash-text-strong whitespace-nowrap">{row.year}</td>
@@ -708,6 +739,9 @@ export default function CatalogVehiclesPanel() {
                       </td>
                       <td className="px-4 py-3 au-dash-text-strong font-mono text-xs whitespace-nowrap">
                         {row.fuelApiVehicleId || '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={shopper.className}>{shopper.label}</span>
                       </td>
                       <td className="px-4 py-3">
                         {row.dataSource?.fueleconomy ? (
@@ -821,6 +855,15 @@ export default function CatalogVehiclesPanel() {
                     {detail.dataSource?.fueleconomy ? (
                       <span className="au-cat-modal__pill au-cat-modal__pill--info">EPA mapped</span>
                     ) : null}
+                    <span
+                      className={`au-cat-modal__pill ${
+                        detail.isCanonical === false
+                          ? 'au-cat-modal__pill--warn'
+                          : 'au-cat-modal__pill--ok'
+                      }`}
+                    >
+                      {canonicalBadge(detail.isCanonical).label}
+                    </span>
                     <span className="au-cat-modal__pill au-cat-modal__pill--warn">
                       {(detail.packages?.count ?? 0)} packages
                     </span>
