@@ -9,6 +9,7 @@ import {
   FaExclamationTriangle,
   FaEye,
   FaFilter,
+  FaPlus,
   FaSort,
   FaSortDown,
   FaSortUp,
@@ -22,6 +23,7 @@ import {
   getCatalogVehicleById,
   getCatalogVehicles,
   getCatalogYears,
+  ingestMarketGaps,
 } from '@/lib/catalog';
 import {
   classificationLabel,
@@ -29,6 +31,9 @@ import {
   enrichStatusLabel,
   humanizePackageCode,
 } from '@/lib/humanizePackage';
+
+const GAP_ADD_TOTAL_MAX = 50;
+const GAP_ADD_CHUNK = 5;
 
 function enrichBadge(source, classification) {
   return {
@@ -107,6 +112,7 @@ export default function CatalogVehiclesPanel() {
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketProgress, setMarketProgress] = useState('');
   const [marketResults, setMarketResults] = useState([]);
+  const [gapIngestLoadingYear, setGapIngestLoadingYear] = useState(null);
 
   const autoCheckYears = () => {
     const cy = new Date().getFullYear();
@@ -349,6 +355,81 @@ export default function CatalogVehiclesPanel() {
     }
   };
 
+  const handleAddMissing = async (result) => {
+    const year = result?.year;
+    const targets = (result?.missingModels || [])
+      .map((row) => ({ make: row.make, model: row.model }))
+      .filter((t) => t.make && t.model);
+
+    if (!year || !targets.length) {
+      setMarketMsg('No missing models to add for this year.');
+      return;
+    }
+
+    const ok = window.confirm(
+      `Add up to ${GAP_ADD_TOTAL_MAX} missing vehicles for ${year}?\n\n` +
+        `${targets.length} missing model(s) queued · writes to DB · may take several minutes.\n` +
+        `Runs in chunks of ${GAP_ADD_CHUNK} (hard cap ${GAP_ADD_TOTAL_MAX}).`
+    );
+    if (!ok) return;
+
+    setGapIngestLoadingYear(year);
+    setMarketMsg('');
+    setMarketProgress(`Adding missing for ${year} (0/${GAP_ADD_TOTAL_MAX})…`);
+
+    let writtenTotal = 0;
+    let skippedTotal = 0;
+    const sample = [];
+
+    try {
+      while (writtenTotal < GAP_ADD_TOTAL_MAX) {
+        const remaining = GAP_ADD_TOTAL_MAX - writtenTotal;
+        const chunkMax = Math.min(GAP_ADD_CHUNK, remaining);
+        setMarketProgress(
+          `Adding missing for ${year}… written ${writtenTotal}/${GAP_ADD_TOTAL_MAX} (next chunk ${chunkMax})`
+        );
+
+        const res = await ingestMarketGaps({
+          year,
+          targets,
+          max: chunkMax,
+          perModel: 2,
+        });
+        const data = res.data || {};
+        const chunkWritten = data.writtenCount || 0;
+        writtenTotal += chunkWritten;
+        skippedTotal += data.skippedCount || 0;
+        if (Array.isArray(data.written)) {
+          for (const w of data.written) {
+            if (sample.length < 8) sample.push(`${w.make} ${w.model} ${w.trim || ''}`.trim());
+          }
+        }
+
+        // No new writes this chunk → nothing left to pull from Fuel for these targets
+        if (chunkWritten === 0) break;
+      }
+
+      setMarketMsg(
+        writtenTotal > 0
+          ? `Added ${writtenTotal} vehicle(s) for ${year}` +
+              (skippedTotal ? ` (${skippedTotal} skipped)` : '') +
+              (sample.length ? `. e.g. ${sample.join('; ')}` : '') +
+              '. Re-run Check market gaps to refresh list.'
+          : `No new vehicles written for ${year}` +
+              (skippedTotal ? ` (${skippedTotal} skipped — already present or canonical guard)` : '') +
+              '.'
+      );
+      setMarketProgress('');
+    } catch (err) {
+      setMarketMsg(
+        `Add missing stopped after ${writtenTotal} written: ${err.message || 'ingest failed'}`
+      );
+      setMarketProgress('');
+    } finally {
+      setGapIngestLoadingYear(null);
+    }
+  };
+
   const totalPages = pagination?.totalPages || 0;
   const totalVehicles = pagination?.total ?? 0;
   const checkYearsLabel = autoCheckYears().join(' + ');
@@ -401,9 +482,30 @@ export default function CatalogVehiclesPanel() {
                 >
                   <div className="au-cat-gap-card__head">
                     <h3 className="au-cat-gap-card__year">{result.year}</h3>
-                    <span className={`au-cat-badge ${result.hasGaps ? 'au-cat-badge--warn' : 'au-cat-badge--ok'}`}>
-                      {result.hasGaps ? 'Gaps found' : 'In sync'}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`au-cat-badge ${result.hasGaps ? 'au-cat-badge--warn' : 'au-cat-badge--ok'}`}>
+                        {result.hasGaps ? 'Gaps found' : 'In sync'}
+                      </span>
+                      {result.hasGaps && (result.missingModelCount || 0) > 0 ? (
+                        <button
+                          type="button"
+                          className="au-cat-btn-primary"
+                          style={{ minHeight: '2rem', padding: '0.35rem 0.7rem', fontSize: '0.8rem' }}
+                          disabled={
+                            marketLoading ||
+                            gapIngestLoadingYear != null ||
+                            !(result.missingModels || []).length
+                          }
+                          onClick={() => handleAddMissing(result)}
+                          title={`Write up to ${GAP_ADD_TOTAL_MAX} new Fuel vehicles for missing models`}
+                        >
+                          <FaPlus className={`w-3 h-3 ${gapIngestLoadingYear === result.year ? 'animate-spin' : ''}`} />
+                          {gapIngestLoadingYear === result.year
+                            ? 'Adding…'
+                            : `Add missing (max ${GAP_ADD_TOTAL_MAX})`}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="au-cat-metrics">
@@ -463,7 +565,7 @@ export default function CatalogVehiclesPanel() {
                   ) : null}
 
                   <p className="au-cat-footer-note">
-                    Manually triggered · detect only · nothing written ·{' '}
+                    Check = detect only · Add missing = controlled write (max {GAP_ADD_TOTAL_MAX}) ·{' '}
                     {result.lastCheckedAt ? new Date(result.lastCheckedAt).toLocaleString() : '—'}
                   </p>
                 </div>

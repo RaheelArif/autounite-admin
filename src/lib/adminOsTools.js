@@ -2,6 +2,26 @@
  * Map Admin OS existingHref → in-shell tool (no legacy sidebar jump).
  */
 
+const TOOL_ID_TO_HREF = {
+  users: '/users',
+  request: '/request',
+  blog: '/blog',
+  'dealer-beta': '/dealer-beta',
+  'dealer-bootstrap': '/dealer-bootstrap',
+  queries: '/queries',
+  catalog: '/catalog',
+  'search-governance': '/search-governance',
+};
+
+/** Resolve ?tool=catalog (etc.) back to a parseable href. */
+export function hrefForAdminOsToolId(toolId) {
+  const id = String(toolId || '').trim();
+  if (!id) return null;
+  if (TOOL_ID_TO_HREF[id]) return TOOL_ID_TO_HREF[id];
+  if (id.startsWith('/')) return id;
+  return null;
+}
+
 export function parseAdminOsTool(href) {
   const raw = String(href || '').trim();
   if (!raw) return null;

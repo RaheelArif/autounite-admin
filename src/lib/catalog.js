@@ -5,8 +5,8 @@
 
 import { authenticatedFetch } from './auth';
 
-async function catalogFetch(path) {
-  const response = await authenticatedFetch(`/api/v1/admin/catalog${path}`);
+async function catalogFetch(path, options = {}) {
+  const response = await authenticatedFetch(`/api/v1/admin/catalog${path}`, options);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(data.message || `Catalog request failed (${response.status})`);
@@ -72,4 +72,13 @@ export const checkNewInMarket = async ({ year, make, depth } = {}) => {
   if (depth) params.set('depth', String(depth));
   const q = params.toString();
   return catalogFetch(`/check-new-in-market${q ? `?${q}` : ''}`);
+};
+
+/** Controlled write: max 50 vehicles hard-capped on API. */
+export const ingestMarketGaps = async ({ year, targets, max = 5, perModel = 2 } = {}) => {
+  return catalogFetch('/ingest-market-gaps', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ year, targets, max, perModel }),
+  });
 };

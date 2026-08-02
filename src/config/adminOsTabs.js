@@ -14,9 +14,13 @@ export const ADMIN_OS_TAB_ORDER = [
   'settings',
 ];
 
-/** Temporary tools — not part of locked 8-tab Admin OS */
+/** Old admin sidebar tools — embedded in shell (same pages / APIs). */
 export const ADMIN_OS_LEGACY_LINKS = [
   { id: 'search-governance', label: 'Search QA', href: '/search-governance' },
+  { id: 'blog', label: 'Blog', href: '/blog' },
+  { id: 'users', label: 'Users', href: '/users' },
+  { id: 'dealer-beta', label: 'Dealer Beta', href: '/dealer-beta' },
+  { id: 'dealer-bootstrap', label: 'Dealer Bootstrap', href: '/dealer-bootstrap' },
   { id: 'catalog', label: 'Vehicles (Data Ops)', href: '/catalog' },
 ];
 

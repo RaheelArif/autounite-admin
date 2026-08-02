@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   ADMIN_OS_LEGACY_LINKS,
   ADMIN_OS_TAB_ORDER,
@@ -9,7 +9,7 @@ import {
   getAdminOsEnvironmentLabel,
 } from '@/config/adminOsTabs';
 import { getUser, logout } from '@/lib/auth';
-import { parseAdminOsTool } from '@/lib/adminOsTools';
+import { hrefForAdminOsToolId, parseAdminOsTool } from '@/lib/adminOsTools';
 import AdminOsCardDrawer from '@/components/admin-os/AdminOsCardDrawer';
 import AdminOsToolWorkspace from '@/components/admin-os/AdminOsToolWorkspace';
 import { FaFacebookF, FaInstagram, FaYoutube, FaLinkedinIn } from 'react-icons/fa';
@@ -43,6 +43,8 @@ const BG_LAYER = {
 
 export default function AdminOsShell({ tabId = 'dealers' }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const tab = ADMIN_OS_TABS[tabId] || ADMIN_OS_TABS.dealers;
   const [cardPage, setCardPage] = useState(0);
   const [activePill, setActivePill] = useState(0);
@@ -58,6 +60,29 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
     return (tab.cards || []).slice(start, start + 3);
   }, [tab, cardPage]);
 
+  const writeToolQuery = (tool) => {
+    const params = new URLSearchParams(searchParams?.toString?.() || '');
+    if (tool?.id) params.set('tool', tool.id);
+    else params.delete('tool');
+    const q = params.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  };
+
+  // Restore embedded tool from ?tool= so URL matches what’s on screen
+  useEffect(() => {
+    const toolId = searchParams?.get?.('tool');
+    if (!toolId) {
+      setActiveTool(null);
+      return;
+    }
+    if (activeTool?.id === toolId) return;
+    const href = hrefForAdminOsToolId(toolId);
+    if (!href) return;
+    const tool = parseAdminOsTool(href);
+    if (tool && tool.id !== 'external') setActiveTool(tool);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync from URL only
+  }, [searchParams]);
+
   const openCard = (card) => setDrawerCard(card);
 
   const openTool = (href) => {
@@ -69,9 +94,13 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
       return;
     }
     setActiveTool(tool);
+    writeToolQuery(tool);
   };
 
-  const closeTool = () => setActiveTool(null);
+  const closeTool = () => {
+    setActiveTool(null);
+    writeToolQuery(null);
+  };
 
   const switchTab = (id) => {
     setCardPage(0);
@@ -130,9 +159,9 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
               <button
                 key={id}
                 type="button"
-                className={`aos-nav-btn${tab.id === id ? ' is-active' : ''}`}
+                className={`aos-nav-btn${tab.id === id && !activeTool ? ' is-active' : ''}`}
                 onClick={() => switchTab(id)}
-                aria-current={tab.id === id ? 'page' : undefined}
+                aria-current={tab.id === id && !activeTool ? 'page' : undefined}
                 title={item.label}
               >
                 <span className="aos-nav-btn__icon" aria-hidden>{item.icon}</span>
@@ -143,7 +172,7 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
         </nav>
 
         <div className="aos-sidebar-section">
-          <p className="aos-sidebar-section__label">Interim tools</p>
+          <p className="aos-sidebar-section__label">Connected tools</p>
           <nav className="aos-nav">
             {ADMIN_OS_LEGACY_LINKS.map((link) => (
               <button
@@ -183,8 +212,9 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
       <main className={`aos-main${activeTool ? ' aos-main--tool' : ''}`}>
         <div className="aos-top">
           <div className="aos-breadcrumb">
-            Admin OS &gt; {tab.label}
-            {activeTool ? ` > ${activeTool.label}` : ''}
+            {activeTool
+              ? `Admin OS > Connected tools > ${activeTool.label}`
+              : `Admin OS > ${tab.label}`}
           </div>
           <div className="aos-utility">
             <span className="aos-pill">▣ Admin OS</span>
