@@ -387,7 +387,11 @@ export default function CatalogVehiclesPanel() {
     setMarketMsgTone('info');
 
     let writtenTotal = 0;
-    let skippedTotal = 0;
+    /** Unique make|model that had nothing new to write (not cumulative re-scans). */
+    const skippedModels = new Set();
+    /** Unique fuel ids skipped by canonical / process guard. */
+    const skippedFuelIds = new Set();
+    let workingTargets = [...targets];
     const recent = [];
 
     const pushRecent = (label) => {
@@ -395,13 +399,17 @@ export default function CatalogVehiclesPanel() {
       if (recent.length > 6) recent.pop();
     };
 
+    const skippedDisplayCount = () => skippedModels.size + skippedFuelIds.size;
+
     const paint = (partial) => {
       const remaining = Math.max(0, GAP_ADD_TOTAL_MAX - writtenTotal);
+      const skipped = skippedDisplayCount();
       const run = {
         year,
         status: 'running',
         written: writtenTotal,
-        skipped: skippedTotal,
+        skipped,
+        skippedModels: skippedModels.size,
         target: GAP_ADD_TOTAL_MAX,
         remaining,
         pct: Math.round((writtenTotal / GAP_ADD_TOTAL_MAX) * 100),
@@ -411,7 +419,7 @@ export default function CatalogVehiclesPanel() {
       setGapIngestRun(run);
       setMarketProgress(
         `Adding ${year}: ${writtenTotal}/${GAP_ADD_TOTAL_MAX} written · ${remaining} left` +
-          (skippedTotal ? ` · ${skippedTotal} skipped` : '') +
+          (skipped ? ` · ${skipped} models already covered` : '') +
           (partial?.phase === 'writing' ? ` · writing #${writtenTotal + 1}…` : '')
       );
     };
@@ -420,20 +428,50 @@ export default function CatalogVehiclesPanel() {
 
     try {
       while (writtenTotal < GAP_ADD_TOTAL_MAX) {
+        if (!workingTargets.length) break;
         const remaining = GAP_ADD_TOTAL_MAX - writtenTotal;
         const chunkMax = Math.min(GAP_ADD_CHUNK, remaining);
         paint({ phase: 'writing' });
 
         const res = await ingestMarketGaps({
           year,
-          targets,
+          targets: workingTargets,
           max: chunkMax,
           perModel: 2,
         });
         const data = res.data || {};
         const chunkWritten = data.writtenCount || 0;
         writtenTotal += chunkWritten;
-        skippedTotal += data.skippedCount || 0;
+
+        // Track unique exhausted models (do not sum the same skips every chunk)
+        const exhaustedKeys = new Set();
+        if (Array.isArray(data.skipped)) {
+          for (const s of data.skipped) {
+            const key = `${s.make || ''}|${s.model || ''}`.toLowerCase();
+            const reason = String(s.reason || '');
+            if (
+              reason === 'no_new_fuel_vehicles' ||
+              reason === 'make_not_in_fuel' ||
+              reason === 'model_not_in_fuel'
+            ) {
+              if (key !== '|') {
+                skippedModels.add(key);
+                exhaustedKeys.add(key);
+              }
+            } else if (s.fuelId != null) {
+              skippedFuelIds.add(String(s.fuelId));
+            } else if (key !== '|') {
+              skippedModels.add(key);
+            }
+          }
+        }
+
+        // Drop exhausted targets so next chunk does not re-walk them
+        if (exhaustedKeys.size) {
+          workingTargets = workingTargets.filter(
+            (t) => !exhaustedKeys.has(`${t.make}|${t.model}`.toLowerCase())
+          );
+        }
 
         if (Array.isArray(data.written)) {
           for (const w of data.written) {
@@ -448,11 +486,13 @@ export default function CatalogVehiclesPanel() {
       }
 
       const remaining = Math.max(0, GAP_ADD_TOTAL_MAX - writtenTotal);
+      const skipped = skippedDisplayCount();
       const doneRun = {
         year,
         status: 'done',
         written: writtenTotal,
-        skipped: skippedTotal,
+        skipped,
+        skippedModels: skippedModels.size,
         target: GAP_ADD_TOTAL_MAX,
         remaining,
         pct: Math.round((writtenTotal / GAP_ADD_TOTAL_MAX) * 100),
@@ -465,7 +505,9 @@ export default function CatalogVehiclesPanel() {
       setMarketMsg(
         writtenTotal > 0
           ? `Batch complete for ${year}: ${writtenTotal}/${GAP_ADD_TOTAL_MAX} added` +
-              (skippedTotal ? `, ${skippedTotal} skipped` : '') +
+              (skipped
+                ? ` · ${skipped} queued model(s) already covered / no new Fuel rows`
+                : '') +
               (remaining > 0 && writtenTotal < GAP_ADD_TOTAL_MAX
                 ? ` · stopped early (no more new Fuel rows for queued models)`
                 : writtenTotal >= GAP_ADD_TOTAL_MAX
@@ -473,7 +515,9 @@ export default function CatalogVehiclesPanel() {
                   : '') +
               '. Re-run Check market gaps to refresh the missing list.'
           : `No new vehicles written for ${year}` +
-              (skippedTotal ? ` (${skippedTotal} skipped — already present or canonical guard)` : '') +
+              (skipped
+                ? ` (${skipped} model(s) already covered or blocked by canonical guard)`
+                : '') +
               '.'
       );
       setMarketProgress('');
@@ -482,7 +526,8 @@ export default function CatalogVehiclesPanel() {
         year,
         status: 'error',
         written: writtenTotal,
-        skipped: skippedTotal,
+        skipped: skippedDisplayCount(),
+        skippedModels: skippedModels.size,
         target: GAP_ADD_TOTAL_MAX,
         remaining: Math.max(0, GAP_ADD_TOTAL_MAX - writtenTotal),
         pct: Math.round((writtenTotal / GAP_ADD_TOTAL_MAX) * 100),
@@ -570,7 +615,9 @@ export default function CatalogVehiclesPanel() {
               </strong>
               <span>
                 {gapIngestRun.written}/{gapIngestRun.target} written · {gapIngestRun.remaining} left
-                {gapIngestRun.skipped ? ` · ${gapIngestRun.skipped} skipped` : ''}
+                {gapIngestRun.skipped
+                  ? ` · ${gapIngestRun.skipped} already covered`
+                  : ''}
               </span>
             </div>
             <div className="au-cat-ingest-bar" aria-hidden>
