@@ -186,6 +186,87 @@
   box-shadow: 0 0 20px rgba(52, 211, 153, 0.08);
 }
 
+.au-cat-banner--error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(8, 12, 22, 0.55));
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fecaca;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.08);
+}
+
+/* ── Add-missing live status ── */
+.au-cat-ingest-status {
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 14, 24, 0.85);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.au-cat-ingest-status--running {
+  border-color: rgba(141, 92, 255, 0.45);
+  box-shadow: 0 0 24px rgba(111, 48, 255, 0.12);
+}
+
+.au-cat-ingest-status--done {
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+.au-cat-ingest-status--error {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.au-cat-ingest-status__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.au-cat-ingest-status__head strong {
+  color: #fff;
+  font-weight: 650;
+}
+
+.au-cat-ingest-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.au-cat-ingest-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6f30ff, #8d5cff);
+  transition: width 0.35s ease;
+}
+
+.au-cat-ingest-status__note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.au-cat-ingest-status__recent {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  color: rgba(226, 232, 240, 0.78);
+}
+
+.au-cat-ingest-status__recent li::before {
+  content: '✓ ';
+  color: #34d399;
+}
+
 /* ── Gap year cards ── */
 .au-cat-gap-grid {
   display: grid;

@@ -33,7 +33,8 @@ import {
 } from '@/lib/humanizePackage';
 
 const GAP_ADD_TOTAL_MAX = 50;
-const GAP_ADD_CHUNK = 5;
+/** 1 = live status after each vehicle (clearer progress in admin). */
+const GAP_ADD_CHUNK = 1;
 
 function enrichBadge(source, classification) {
   return {
@@ -109,10 +110,13 @@ export default function CatalogVehiclesPanel() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detail, setDetail] = useState(null);
   const [marketMsg, setMarketMsg] = useState('');
+  const [marketMsgTone, setMarketMsgTone] = useState('warn'); // ok | warn | info | error
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketProgress, setMarketProgress] = useState('');
   const [marketResults, setMarketResults] = useState([]);
   const [gapIngestLoadingYear, setGapIngestLoadingYear] = useState(null);
+  /** Live / final status for Add missing (max 50). */
+  const [gapIngestRun, setGapIngestRun] = useState(null);
 
   const autoCheckYears = () => {
     const cy = new Date().getFullYear();
@@ -320,7 +324,9 @@ export default function CatalogVehiclesPanel() {
   const handleCheckMarket = async () => {
     const yearsToCheck = autoCheckYears();
     setMarketMsg('');
+    setMarketMsgTone('warn');
     setMarketResults([]);
+    setGapIngestRun(null);
     setMarketProgress(`Starting scan for ${yearsToCheck.join(' + ')}…`);
     setMarketLoading(true);
 
@@ -340,6 +346,7 @@ export default function CatalogVehiclesPanel() {
       const totalMissingMakes = collected.reduce((n, r) => n + (r.missingMakeCount || 0), 0);
       const totalMissingModels = collected.reduce((n, r) => n + (r.missingModelCount || 0), 0);
       const hasGaps = totalMissingMakes > 0 || totalMissingModels > 0;
+      setMarketMsgTone(hasGaps ? 'warn' : 'ok');
       setMarketMsg(
         hasGaps
           ? `Auto-check ${yearsToCheck.join(' + ')}: ${totalMissingMakes} missing make(s), ${totalMissingModels} missing model(s). Nothing written.`
@@ -347,6 +354,7 @@ export default function CatalogVehiclesPanel() {
       );
       setMarketProgress('');
     } catch (err) {
+      setMarketMsgTone('error');
       setMarketMsg(err.message || 'Market check failed');
       setMarketProgress('');
       if (collected.length) setMarketResults(collected);
@@ -362,6 +370,7 @@ export default function CatalogVehiclesPanel() {
       .filter((t) => t.make && t.model);
 
     if (!year || !targets.length) {
+      setMarketMsgTone('warn');
       setMarketMsg('No missing models to add for this year.');
       return;
     }
@@ -369,25 +378,51 @@ export default function CatalogVehiclesPanel() {
     const ok = window.confirm(
       `Add up to ${GAP_ADD_TOTAL_MAX} missing vehicles for ${year}?\n\n` +
         `${targets.length} missing model(s) queued · writes to DB · may take several minutes.\n` +
-        `Runs in chunks of ${GAP_ADD_CHUNK} (hard cap ${GAP_ADD_TOTAL_MAX}).`
+        `Live progress updates after each vehicle (cap ${GAP_ADD_TOTAL_MAX}).`
     );
     if (!ok) return;
 
     setGapIngestLoadingYear(year);
     setMarketMsg('');
-    setMarketProgress(`Adding missing for ${year} (0/${GAP_ADD_TOTAL_MAX})…`);
+    setMarketMsgTone('info');
 
     let writtenTotal = 0;
     let skippedTotal = 0;
-    const sample = [];
+    const recent = [];
+
+    const pushRecent = (label) => {
+      recent.unshift(label);
+      if (recent.length > 6) recent.pop();
+    };
+
+    const paint = (partial) => {
+      const remaining = Math.max(0, GAP_ADD_TOTAL_MAX - writtenTotal);
+      const run = {
+        year,
+        status: 'running',
+        written: writtenTotal,
+        skipped: skippedTotal,
+        target: GAP_ADD_TOTAL_MAX,
+        remaining,
+        pct: Math.round((writtenTotal / GAP_ADD_TOTAL_MAX) * 100),
+        recent: [...recent],
+        ...partial,
+      };
+      setGapIngestRun(run);
+      setMarketProgress(
+        `Adding ${year}: ${writtenTotal}/${GAP_ADD_TOTAL_MAX} written · ${remaining} left` +
+          (skippedTotal ? ` · ${skippedTotal} skipped` : '') +
+          (partial?.phase === 'writing' ? ` · writing #${writtenTotal + 1}…` : '')
+      );
+    };
+
+    paint({ phase: 'starting' });
 
     try {
       while (writtenTotal < GAP_ADD_TOTAL_MAX) {
         const remaining = GAP_ADD_TOTAL_MAX - writtenTotal;
         const chunkMax = Math.min(GAP_ADD_CHUNK, remaining);
-        setMarketProgress(
-          `Adding missing for ${year}… written ${writtenTotal}/${GAP_ADD_TOTAL_MAX} (next chunk ${chunkMax})`
-        );
+        paint({ phase: 'writing' });
 
         const res = await ingestMarketGaps({
           year,
@@ -399,30 +434,65 @@ export default function CatalogVehiclesPanel() {
         const chunkWritten = data.writtenCount || 0;
         writtenTotal += chunkWritten;
         skippedTotal += data.skippedCount || 0;
+
         if (Array.isArray(data.written)) {
           for (const w of data.written) {
-            if (sample.length < 8) sample.push(`${w.make} ${w.model} ${w.trim || ''}`.trim());
+            pushRecent(`${w.make} ${w.model}${w.trim ? ` ${w.trim}` : ''}`.trim());
           }
         }
+
+        paint({ phase: 'chunk_done' });
 
         // No new writes this chunk → nothing left to pull from Fuel for these targets
         if (chunkWritten === 0) break;
       }
 
+      const remaining = Math.max(0, GAP_ADD_TOTAL_MAX - writtenTotal);
+      const doneRun = {
+        year,
+        status: 'done',
+        written: writtenTotal,
+        skipped: skippedTotal,
+        target: GAP_ADD_TOTAL_MAX,
+        remaining,
+        pct: Math.round((writtenTotal / GAP_ADD_TOTAL_MAX) * 100),
+        recent: [...recent],
+        phase: 'done',
+      };
+      setGapIngestRun(doneRun);
+
+      setMarketMsgTone(writtenTotal > 0 ? 'ok' : 'warn');
       setMarketMsg(
         writtenTotal > 0
-          ? `Added ${writtenTotal} vehicle(s) for ${year}` +
-              (skippedTotal ? ` (${skippedTotal} skipped)` : '') +
-              (sample.length ? `. e.g. ${sample.join('; ')}` : '') +
-              '. Re-run Check market gaps to refresh list.'
+          ? `Batch complete for ${year}: ${writtenTotal}/${GAP_ADD_TOTAL_MAX} added` +
+              (skippedTotal ? `, ${skippedTotal} skipped` : '') +
+              (remaining > 0 && writtenTotal < GAP_ADD_TOTAL_MAX
+                ? ` · stopped early (no more new Fuel rows for queued models)`
+                : writtenTotal >= GAP_ADD_TOTAL_MAX
+                  ? ` · cap reached`
+                  : '') +
+              '. Re-run Check market gaps to refresh the missing list.'
           : `No new vehicles written for ${year}` +
               (skippedTotal ? ` (${skippedTotal} skipped — already present or canonical guard)` : '') +
               '.'
       );
       setMarketProgress('');
     } catch (err) {
+      setGapIngestRun({
+        year,
+        status: 'error',
+        written: writtenTotal,
+        skipped: skippedTotal,
+        target: GAP_ADD_TOTAL_MAX,
+        remaining: Math.max(0, GAP_ADD_TOTAL_MAX - writtenTotal),
+        pct: Math.round((writtenTotal / GAP_ADD_TOTAL_MAX) * 100),
+        recent: [...recent],
+        phase: 'error',
+        error: err.message || 'ingest failed',
+      });
+      setMarketMsgTone('error');
       setMarketMsg(
-        `Add missing stopped after ${writtenTotal} written: ${err.message || 'ingest failed'}`
+        `Add missing stopped for ${year} after ${writtenTotal}/${GAP_ADD_TOTAL_MAX} written: ${err.message || 'ingest failed'}`
       );
       setMarketProgress('');
     } finally {
@@ -433,7 +503,6 @@ export default function CatalogVehiclesPanel() {
   const totalPages = pagination?.totalPages || 0;
   const totalVehicles = pagination?.total ?? 0;
   const checkYearsLabel = autoCheckYears().join(' + ');
-  const anyMarketGaps = marketResults.some((r) => r.hasGaps);
 
   return (
     <div className="au-cat-page">
@@ -466,8 +535,65 @@ export default function CatalogVehiclesPanel() {
         {marketProgress ? <div className="au-cat-banner au-cat-banner--info mt-3">{marketProgress}</div> : null}
 
         {marketMsg ? (
-          <div className={`au-cat-banner mt-3 ${anyMarketGaps ? 'au-cat-banner--warn' : 'au-cat-banner--ok'}`}>
+          <div
+            className={`au-cat-banner mt-3 ${
+              marketMsgTone === 'ok'
+                ? 'au-cat-banner--ok'
+                : marketMsgTone === 'error'
+                  ? 'au-cat-banner--error'
+                  : marketMsgTone === 'info'
+                    ? 'au-cat-banner--info'
+                    : 'au-cat-banner--warn'
+            }`}
+          >
             {marketMsg}
+          </div>
+        ) : null}
+
+        {gapIngestRun ? (
+          <div
+            className={`au-cat-ingest-status mt-3 ${
+              gapIngestRun.status === 'done'
+                ? 'au-cat-ingest-status--done'
+                : gapIngestRun.status === 'error'
+                  ? 'au-cat-ingest-status--error'
+                  : 'au-cat-ingest-status--running'
+            }`}
+          >
+            <div className="au-cat-ingest-status__head">
+              <strong>
+                {gapIngestRun.status === 'running'
+                  ? `Adding missing · ${gapIngestRun.year}`
+                  : gapIngestRun.status === 'done'
+                    ? `Batch complete · ${gapIngestRun.year}`
+                    : `Stopped · ${gapIngestRun.year}`}
+              </strong>
+              <span>
+                {gapIngestRun.written}/{gapIngestRun.target} written · {gapIngestRun.remaining} left
+                {gapIngestRun.skipped ? ` · ${gapIngestRun.skipped} skipped` : ''}
+              </span>
+            </div>
+            <div className="au-cat-ingest-bar" aria-hidden>
+              <div
+                className="au-cat-ingest-bar__fill"
+                style={{ width: `${Math.min(100, gapIngestRun.pct || 0)}%` }}
+              />
+            </div>
+            {gapIngestRun.phase === 'writing' ? (
+              <p className="au-cat-ingest-status__note">
+                Writing vehicle #{(gapIngestRun.written || 0) + 1} of {gapIngestRun.target}… (Fuel + EPA + enrich)
+              </p>
+            ) : null}
+            {gapIngestRun.recent?.length ? (
+              <ul className="au-cat-ingest-status__recent">
+                {gapIngestRun.recent.map((label, idx) => (
+                  <li key={`${idx}-${label}`}>{label}</li>
+                ))}
+              </ul>
+            ) : null}
+            {gapIngestRun.error ? (
+              <p className="au-cat-ingest-status__note">{gapIngestRun.error}</p>
+            ) : null}
           </div>
         ) : null}
 
@@ -501,7 +627,7 @@ export default function CatalogVehiclesPanel() {
                         >
                           <FaPlus className={`w-3 h-3 ${gapIngestLoadingYear === result.year ? 'animate-spin' : ''}`} />
                           {gapIngestLoadingYear === result.year
-                            ? 'Adding…'
+                            ? `${gapIngestRun?.written ?? 0}/${GAP_ADD_TOTAL_MAX}…`
                             : `Add missing (max ${GAP_ADD_TOTAL_MAX})`}
                         </button>
                       ) : null}
