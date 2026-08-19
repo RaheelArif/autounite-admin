@@ -28,10 +28,10 @@ import {
   scheduleArticle,
   archiveArticle,
   getArticleAudit,
-  createPreviewToken,
   getCategories,
   getTags,
 } from '@/lib/blog';
+import ArticlePreviewModal from '@/app/blog/ArticlePreviewModal';
 
 const ARTICLE_TYPES = [
   { value: 'article', label: 'Article' },
@@ -112,6 +112,8 @@ export default function ArticlesTab() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [previewArticle, setPreviewArticle] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
   const [formData, setFormData] = useState({ ...DEFAULT_FORM });
   const [submitting, setSubmitting] = useState(false);
@@ -448,12 +450,14 @@ export default function ArticlesTab() {
 
   const handlePreview = async (id) => {
     setError('');
+    setPreviewLoading(true);
     try {
-      const res = await createPreviewToken(id);
-      const url = res.data?.previewUrl;
-      if (url) window.open(url, '_blank', 'noopener');
+      const res = await getArticleById(id);
+      setPreviewArticle(res.data?.article || null);
     } catch (err) {
-      setError(err.message || 'Failed to create preview');
+      setError(err.message || 'Failed to load preview');
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -721,8 +725,9 @@ export default function ArticlesTab() {
                           )}
                           <button
                             onClick={() => handlePreview(art._id)}
-                            className="px-2 py-1 rounded-lg bg-white/10 au-dash-text-subtle text-xs"
-                            title="Preview token"
+                            disabled={previewLoading}
+                            className="px-2 py-1 rounded-lg bg-white/10 au-dash-text-subtle text-xs disabled:opacity-50"
+                            title="Admin preview"
                           >
                             Preview
                           </button>
@@ -782,6 +787,10 @@ export default function ArticlesTab() {
           </>
         )}
       </div>
+
+      {previewArticle && (
+        <ArticlePreviewModal article={previewArticle} onClose={() => setPreviewArticle(null)} />
+      )}
 
       {/* Create/Edit Form Modal */}
       {formOpen && (
