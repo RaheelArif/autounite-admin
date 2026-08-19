@@ -48,7 +48,7 @@ export function parseAdminOsTool(href) {
     return { id: 'request', label: 'User Requests', href: raw, props: {} };
   }
   if (normalized === '/blog') {
-    return { id: 'blog', label: 'Blog admin', href: raw, props: {} };
+    return { id: 'blog', label: 'Blog admin', href: raw, props: { tab: params.get('tab') || 'articles' } };
   }
   if (normalized === '/dealer-beta') {
     return { id: 'dealer-beta', label: 'Dealer Beta', href: raw, props: {} };

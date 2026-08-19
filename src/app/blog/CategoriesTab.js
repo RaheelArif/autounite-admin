@@ -256,6 +256,9 @@ export default function CategoriesTab() {
                           >
                             <FaEdit className="w-4 h-4" />
                           </button>
+                          {cat.locked ? (
+                            <span className="px-2 py-1 text-xs au-dash-text-subtle">Locked</span>
+                          ) : (
                           <button
                             onClick={() => handleDelete(cat._id)}
                             className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
@@ -263,6 +266,7 @@ export default function CategoriesTab() {
                           >
                             <FaTrash className="w-4 h-4" />
                           </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -333,6 +337,7 @@ export default function CategoriesTab() {
                   value={formData.slug}
                   onChange={(e) => setFormData((p) => ({ ...p, slug: e.target.value }))}
                   required
+                  disabled={Boolean(editingCategory?.locked)}
                   className="au-dash-input"
                   placeholder="e.g. buying-guide"
                 />

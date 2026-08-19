@@ -16,7 +16,7 @@ function ToolBody({ tool }) {
     case 'request':
       return <RequestPageContent />;
     case 'blog':
-      return <BlogPageContent />;
+      return <BlogPageContent initialTab={tool.props?.tab} />;
     case 'dealer-beta':
       return <DealerBetaPageContent />;
     case 'dealer-bootstrap':

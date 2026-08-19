@@ -20,17 +20,26 @@ import {
   getArticleById,
   createArticle,
   updateArticle,
-  deleteArticle,
   publishArticle,
   unpublishArticle,
+  submitArticleReview,
+  approveArticle,
+  requestArticleRevision,
+  scheduleArticle,
+  archiveArticle,
+  getArticleAudit,
+  createPreviewToken,
   getCategories,
   getTags,
 } from '@/lib/blog';
 
 const ARTICLE_TYPES = [
+  { value: 'article', label: 'Article' },
+  { value: 'newsletter', label: 'Newsletter' },
   { value: 'guide', label: 'Guide' },
-  { value: 'comparison', label: 'Comparison' },
   { value: 'explainer', label: 'Explainer' },
+  { value: 'data_piece', label: 'Insight / Data' },
+  { value: 'comparison', label: 'Comparison' },
   { value: 'checklist', label: 'Checklist' },
   { value: 'news_brief', label: 'News Brief' },
   { value: 'opinion', label: 'Opinion' },
@@ -73,7 +82,7 @@ const DEFAULT_FORM = {
   title: '',
   slug: '',
   summary: '',
-  type: 'guide',
+  type: 'article',
   tags: [],
   categorySlug: '',
   reading_level: 'intermediate',
@@ -348,13 +357,14 @@ export default function ArticlesTab() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Hard delete this article? This cannot be undone.')) return;
+    const reason = window.prompt('Archive reason (required):');
+    if (!reason) return;
     setError('');
     try {
-      await deleteArticle(id);
+      await archiveArticle(id, reason);
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to delete');
+      setError(err.message || 'Failed to archive');
     }
   };
 
@@ -369,12 +379,95 @@ export default function ArticlesTab() {
   };
 
   const handleUnpublish = async (id) => {
+    const reason = window.prompt('Reason to unpublish (required):');
+    if (!reason) return;
     setError('');
     try {
-      await unpublishArticle(id);
+      await unpublishArticle(id, reason);
       fetchArticles();
     } catch (err) {
       setError(err.message || 'Failed to unpublish');
+    }
+  };
+
+  const handleSubmitReview = async (id) => {
+    setError('');
+    try {
+      await submitArticleReview(id);
+      fetchArticles();
+    } catch (err) {
+      setError(err.message || 'Failed to submit for review');
+    }
+  };
+
+  const handleApprove = async (id) => {
+    setError('');
+    try {
+      await approveArticle(id);
+      fetchArticles();
+    } catch (err) {
+      setError(err.message || 'Failed to approve');
+    }
+  };
+
+  const handleRequestRevision = async (id) => {
+    const reason = window.prompt('Revision reason (required):');
+    if (!reason) return;
+    setError('');
+    try {
+      await requestArticleRevision(id, reason);
+      fetchArticles();
+    } catch (err) {
+      setError(err.message || 'Failed to request revision');
+    }
+  };
+
+  const handleSchedule = async (id) => {
+    const publishAt = window.prompt('Schedule publish time (YYYY-MM-DDTHH:mm):');
+    if (!publishAt) return;
+    setError('');
+    try {
+      await scheduleArticle(id, new Date(publishAt).toISOString());
+      fetchArticles();
+    } catch (err) {
+      setError(err.message || 'Failed to schedule');
+    }
+  };
+
+  const handleArchive = async (id) => {
+    const reason = window.prompt('Archive reason (required):');
+    if (!reason) return;
+    setError('');
+    try {
+      await archiveArticle(id, reason);
+      fetchArticles();
+    } catch (err) {
+      setError(err.message || 'Failed to archive');
+    }
+  };
+
+  const handlePreview = async (id) => {
+    setError('');
+    try {
+      const res = await createPreviewToken(id);
+      const url = res.data?.previewUrl;
+      if (url) window.open(url, '_blank', 'noopener');
+    } catch (err) {
+      setError(err.message || 'Failed to create preview');
+    }
+  };
+
+  const handleAudit = async (id) => {
+    setError('');
+    try {
+      const res = await getArticleAudit(id);
+      const lines = (res.data?.audit || [])
+        .slice(0, 12)
+        .map((row) => `${row.action} → ${row.to_status || ''} (${row.actor_email || row.actor_id || 'system'})`)
+        .join('\n');
+      window.alert(lines || 'No audit events yet.');
+    } catch (err) {
+      setError(err.message || 'Failed to load audit');
     }
   };
 
@@ -428,7 +521,13 @@ export default function ArticlesTab() {
               >
                 <option value="">All</option>
                 <option value="draft">Draft</option>
+                <option value="in_review">In Review</option>
+                <option value="approved">Approved</option>
+                <option value="scheduled">Scheduled</option>
                 <option value="published">Published</option>
+                <option value="revision_requested">Revision requested</option>
+                <option value="unpublished">Unpublished</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
             <div>
@@ -539,7 +638,15 @@ export default function ArticlesTab() {
                           className={`px-2 py-1 rounded text-xs font-medium ${
                             art.status === 'published'
                               ? 'bg-green-500/20 text-green-400'
-                              : 'bg-yellow-500/20 text-yellow-400'
+                              : art.status === 'approved'
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : art.status === 'in_review'
+                                  ? 'bg-blue-500/20 text-blue-300'
+                                  : art.status === 'scheduled'
+                                    ? 'bg-purple-500/20 text-purple-300'
+                                    : art.status === 'archived' || art.status === 'unpublished'
+                                      ? 'bg-red-500/20 text-red-300'
+                                      : 'bg-yellow-500/20 text-yellow-400'
                           }`}
                         >
                           {art.status}
@@ -549,15 +656,61 @@ export default function ArticlesTab() {
                       <td className="px-6 py-4 au-dash-text-subtle text-sm">{formatDate(art.updatedAt)}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
-                          {art.status === 'draft' ? (
+                          {(art.status === 'draft' || art.status === 'revision_requested') && (
+                            <button
+                              onClick={() => handleSubmitReview(art._id)}
+                              className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-300 text-xs"
+                              title="Submit for review"
+                            >
+                              Review
+                            </button>
+                          )}
+                          {art.status === 'in_review' && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(art._id)}
+                                className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs"
+                                title="Approve"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleRequestRevision(art._id)}
+                                className="px-2 py-1 rounded-lg bg-yellow-500/20 text-yellow-300 text-xs"
+                                title="Request revision"
+                              >
+                                Revise
+                              </button>
+                            </>
+                          )}
+                          {art.status === 'approved' && (
+                            <>
+                              <button
+                                onClick={() => handlePublish(art._id)}
+                                className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400"
+                                title="Publish"
+                              >
+                                <FaCheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleSchedule(art._id)}
+                                className="px-2 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-xs"
+                                title="Schedule"
+                              >
+                                Schedule
+                              </button>
+                            </>
+                          )}
+                          {art.status === 'scheduled' && (
                             <button
                               onClick={() => handlePublish(art._id)}
                               className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400"
-                              title="Publish"
+                              title="Publish now"
                             >
                               <FaCheckCircle className="w-4 h-4" />
                             </button>
-                          ) : (
+                          )}
+                          {(art.status === 'published' || art.status === 'updated') && (
                             <button
                               onClick={() => handleUnpublish(art._id)}
                               className="p-2 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400"
@@ -566,6 +719,20 @@ export default function ArticlesTab() {
                               <FaTimesCircle className="w-4 h-4" />
                             </button>
                           )}
+                          <button
+                            onClick={() => handlePreview(art._id)}
+                            className="px-2 py-1 rounded-lg bg-white/10 au-dash-text-subtle text-xs"
+                            title="Preview token"
+                          >
+                            Preview
+                          </button>
+                          <button
+                            onClick={() => handleAudit(art._id)}
+                            className="px-2 py-1 rounded-lg bg-white/10 au-dash-text-subtle text-xs"
+                            title="Audit log"
+                          >
+                            Audit
+                          </button>
                           <button
                             onClick={() => openEditForm(art)}
                             className="p-2 rounded-lg bg-white/15 hover:bg-white/22 au-dash-text-strong"
@@ -724,14 +891,15 @@ export default function ArticlesTab() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium au-dash-text-muted mb-1">Status</label>
-                    <select
+                    <input
+                      type="text"
                       value={formData.status}
-                      onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value }))}
-                      className="au-dash-input"
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="published">Published</option>
-                    </select>
+                      disabled
+                      className="au-dash-input opacity-70"
+                    />
+                    <p className="text-xs au-dash-text-subtle mt-1">
+                      Status changes through Review → Approve → Publish / Schedule.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium au-dash-text-muted mb-1">Read Time (min)</label>

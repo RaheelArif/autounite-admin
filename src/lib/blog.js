@@ -7,6 +7,26 @@ import { authenticatedFetch } from './auth';
 
 const BLOG_PREFIX = '/api/v1/admin/blog';
 
+async function parseBlogResponse(response, fallback) {
+  const err = await response.json().catch(() => ({ message: fallback }));
+  const message =
+    err.error?.safeUserMessage ||
+    err.error?.message ||
+    err.message ||
+    fallback;
+  const error = new Error(message);
+  error.payload = err;
+  throw error;
+}
+
+async function blogFetch(path, options) {
+  const response = await authenticatedFetch(`${BLOG_PREFIX}${path}`, options);
+  if (!response.ok) {
+    await parseBlogResponse(response, 'Blog request failed');
+  }
+  return response.json();
+}
+
 // --- Categories ---
 
 export const getCategories = async (params = {}) => {
@@ -195,23 +215,87 @@ export const deleteArticle = async (id) => {
 };
 
 export const publishArticle = async (id) => {
-  const response = await authenticatedFetch(`${BLOG_PREFIX}/articles/${id}/publish`, {
-    method: 'PATCH',
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ message: 'Failed to publish article' }));
-    throw new Error(err.message || 'Failed to publish article');
-  }
-  return response.json();
+  return blogFetch(`/articles/${id}/publish`, { method: 'PATCH' });
 };
 
-export const unpublishArticle = async (id) => {
-  const response = await authenticatedFetch(`${BLOG_PREFIX}/articles/${id}/unpublish`, {
+export const unpublishArticle = async (id, reason) => {
+  return blogFetch(`/articles/${id}/unpublish`, {
     method: 'PATCH',
+    body: JSON.stringify({ reason }),
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ message: 'Failed to unpublish article' }));
-    throw new Error(err.message || 'Failed to unpublish article');
-  }
-  return response.json();
 };
+
+export const submitArticleReview = (id) =>
+  blogFetch(`/articles/${id}/submit-review`, { method: 'POST' });
+
+export const approveArticle = (id, body = {}) =>
+  blogFetch(`/articles/${id}/approve`, { method: 'POST', body: JSON.stringify(body) });
+
+export const requestArticleRevision = (id, reason) =>
+  blogFetch(`/articles/${id}/request-revision`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+
+export const scheduleArticle = (id, publishAt) =>
+  blogFetch(`/articles/${id}/schedule`, {
+    method: 'POST',
+    body: JSON.stringify({ publishAt }),
+  });
+
+export const archiveArticle = (id, reason) =>
+  blogFetch(`/articles/${id}/archive`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+
+export const getArticleRevisions = (id) => blogFetch(`/articles/${id}/revisions`);
+
+export const getArticleAudit = (id) => blogFetch(`/articles/${id}/audit`);
+
+export const createPreviewToken = (id) =>
+  blogFetch('/preview-token', {
+    method: 'POST',
+    body: JSON.stringify({ contentId: id, expiresInMinutes: 60 }),
+  });
+
+export const getBlogMedia = (params = {}) => {
+  const searchParams = new URLSearchParams();
+  searchParams.set('page', String(params.page || 1));
+  searchParams.set('limit', String(params.limit || 20));
+  if (params.kind) searchParams.set('kind', params.kind);
+  return blogFetch(`/media?${searchParams}`);
+};
+
+export const createBlogMedia = (body) =>
+  blogFetch('/media', { method: 'POST', body: JSON.stringify(body) });
+
+export const updateBlogMedia = (id, body) =>
+  blogFetch(`/media/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+
+export const deleteBlogMedia = (id) => blogFetch(`/media/${id}`, { method: 'DELETE' });
+
+export const getBlogAuthors = () => blogFetch('/authors');
+
+export const createBlogAuthor = (body) =>
+  blogFetch('/authors', { method: 'POST', body: JSON.stringify(body) });
+
+export const updateBlogAuthor = (id, body) =>
+  blogFetch(`/authors/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+
+export const deleteBlogAuthor = (id) => blogFetch(`/authors/${id}`, { method: 'DELETE' });
+
+export const getDistribution = (article_id) => {
+  const q = article_id ? `?article_id=${encodeURIComponent(article_id)}` : '';
+  return blogFetch(`/distribution${q}`);
+};
+
+export const createDistribution = (body) =>
+  blogFetch('/distribution', { method: 'POST', body: JSON.stringify(body) });
+
+export const updateDistribution = (id, body) =>
+  blogFetch(`/distribution/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+
+export const getBlogReports = () => blogFetch('/reports');
+
+export const getBlogMe = () => blogFetch('/me');
