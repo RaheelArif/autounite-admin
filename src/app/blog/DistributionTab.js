@@ -12,7 +12,9 @@ export default function DistributionTab() {
     channel: 'linkedin',
     post_copy: '',
     external_url: '',
-    status: 'draft',
+    status: 'posted',
+    posted_at: '',
+    wrapper_version: 'blog_os_wrapper_v1',
   });
 
   const load = useCallback(async () => {
@@ -37,7 +39,10 @@ export default function DistributionTab() {
     e.preventDefault();
     setError('');
     try {
-      await createDistribution(form);
+      await createDistribution({
+        ...form,
+        posted_at: form.posted_at ? new Date(form.posted_at).toISOString() : undefined,
+      });
       setForm((p) => ({ ...p, post_copy: '', external_url: '' }));
       await load();
     } catch (err) {
@@ -70,6 +75,8 @@ export default function DistributionTab() {
             className="au-dash-input"
           >
             <option value="linkedin">LinkedIn</option>
+            <option value="medium">Medium</option>
+            <option value="substack">Substack</option>
             <option value="newsletter">Newsletter</option>
             <option value="x">X</option>
             <option value="other">Other</option>
@@ -86,6 +93,18 @@ export default function DistributionTab() {
             onChange={(e) => setForm((p) => ({ ...p, post_copy: e.target.value }))}
             className="au-dash-input md:col-span-2 min-h-[80px]"
           />
+          <input
+            placeholder="Wrapper version"
+            value={form.wrapper_version}
+            onChange={(e) => setForm((p) => ({ ...p, wrapper_version: e.target.value }))}
+            className="au-dash-input"
+          />
+          <input
+            type="datetime-local"
+            value={form.posted_at}
+            onChange={(e) => setForm((p) => ({ ...p, posted_at: e.target.value }))}
+            className="au-dash-input"
+          />
           <button type="submit" className="au-dash-btn">
             Save distribution
           </button>
@@ -98,6 +117,8 @@ export default function DistributionTab() {
               <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Article</th>
               <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Channel</th>
               <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Status</th>
+              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Posted</th>
+              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Wrapper</th>
               <th className="px-4 py-3 text-left text-sm au-dash-text-muted">URL</th>
             </tr>
           </thead>
@@ -107,6 +128,8 @@ export default function DistributionTab() {
                 <td className="px-4 py-3 au-dash-text text-sm">{row.article_id}</td>
                 <td className="px-4 py-3 au-dash-text">{row.channel}</td>
                 <td className="px-4 py-3 au-dash-text-subtle">{row.status}</td>
+                <td className="px-4 py-3 au-dash-text-subtle text-sm">{row.posted_at ? new Date(row.posted_at).toLocaleDateString() : '-'}</td>
+                <td className="px-4 py-3 au-dash-text-subtle text-sm">{row.wrapper_version || '-'}</td>
                 <td className="px-4 py-3 au-dash-text-subtle text-sm truncate max-w-[240px]">{row.external_url || '-'}</td>
               </tr>
             ))}

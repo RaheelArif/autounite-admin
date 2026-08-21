@@ -30,6 +30,7 @@ import {
   getArticleAudit,
   getCategories,
   getTags,
+  importArticleJson,
 } from '@/lib/blog';
 import ArticlePreviewModal from '@/app/blog/ArticlePreviewModal';
 
@@ -112,6 +113,9 @@ export default function ArticlesTab() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importJson, setImportJson] = useState('');
+  const [importResult, setImportResult] = useState('');
   const [previewArticle, setPreviewArticle] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
@@ -376,7 +380,36 @@ export default function ArticlesTab() {
       await publishArticle(id);
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to publish');
+      const fields = err.payload?.error?.fieldErrors || [];
+      const extra = fields[0]?.message ? ` — ${fields[0].message}` : '';
+      setError(`${err.message || 'Failed to publish'}${extra}`);
+    }
+  };
+
+  const handleImportJson = async (dryRun) => {
+    setError('');
+    setImportResult('');
+    let parsed;
+    try {
+      parsed = JSON.parse(importJson);
+    } catch {
+      setError('Malformed JSON');
+      return;
+    }
+    try {
+      const res = await importArticleJson(parsed, { dryRun });
+      const article = res.data?.article;
+      setImportResult(
+        `${dryRun ? 'Dry run' : 'Imported'} as ${article?.status || 'draft'} / ${article?.visibility || 'private'} / noindex=${article?.seo?.noindex !== false}`
+      );
+      if (!dryRun) {
+        setImportOpen(false);
+        fetchArticles();
+      }
+    } catch (err) {
+      const fields = err.payload?.error?.fieldErrors || [];
+      const extra = fields[0]?.message ? ` — ${fields[0].message}` : '';
+      setError(`${err.message || 'Import failed'}${extra}`);
     }
   };
 
@@ -596,16 +629,46 @@ export default function ArticlesTab() {
       <div className="au-dash-card overflow-hidden">
         <div className="p-4 au-dash-tabs-underline flex justify-between items-center">
           <h2 className="au-dash-card-title">Articles</h2>
-          <button
-            onClick={openCreateForm}
-            className="flex items-center gap-2 au-dash-btn font-medium"
-          >
-            <FaPlus className="w-4 h-4" />
-            Add Article
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setImportOpen((open) => !open)}
+              className="flex items-center gap-2 px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg font-medium"
+            >
+              Import JSON
+            </button>
+            <button
+              onClick={openCreateForm}
+              className="flex items-center gap-2 au-dash-btn font-medium"
+            >
+              <FaPlus className="w-4 h-4" />
+              Add Article
+            </button>
+          </div>
         </div>
 
-        {loading ? (
+        {importOpen && (
+          <div className="p-4 border-b border-[rgba(255,255,255,0.1)] space-y-3">
+            <p className="text-sm au-dash-text-muted">
+              ChatGPT JSON imports as Draft / Private / noindex. Published, public, and index fields are ignored.
+            </p>
+            <textarea
+              value={importJson}
+              onChange={(e) => setImportJson(e.target.value)}
+              rows={10}
+              className="au-dash-input w-full font-mono text-xs"
+              placeholder='{"title":"...","slug":"...","categorySlug":"buying"}'
+            />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => handleImportJson(true)} className="px-4 py-2 au-dash-tab rounded-lg">
+                Dry run
+              </button>
+              <button type="button" onClick={() => handleImportJson(false)} className="au-dash-btn">
+                Import as Draft
+              </button>
+            </div>
+            {importResult && <p className="text-sm text-emerald-300">{importResult}</p>}
+          </div>
+        )}
           <div className="p-12 text-center">
             <div className="au-dash-spinner mx-auto" />
             <p className="au-dash-text-subtle mt-4">Loading articles...</p>
@@ -622,6 +685,8 @@ export default function ArticlesTab() {
                     <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Slug</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Type</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Status</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Visibility</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Index</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Category</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Updated</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Actions</th>
@@ -655,6 +720,16 @@ export default function ArticlesTab() {
                         >
                           {art.status}
                         </span>
+                        {(art.publish_orchestration?.status === "schedule_failed" ||
+                          art.publish_orchestration?.status === "partial") && (
+                          <span className="ml-2 px-2 py-1 rounded text-xs font-medium bg-orange-500/20 text-orange-300">
+                            Needs retry
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 au-dash-text-subtle text-sm">{art.visibility || 'private'}</td>
+                      <td className="px-6 py-4 au-dash-text-subtle text-sm">
+                        {art.seo?.noindex === false ? 'index' : 'noindex'}
                       </td>
                       <td className="px-6 py-4 au-dash-text-subtle text-sm">{art.categorySlug || '-'}</td>
                       <td className="px-6 py-4 au-dash-text-subtle text-sm">{formatDate(art.updatedAt)}</td>

@@ -21,10 +21,19 @@ async function parseBlogResponse(response, fallback) {
 
 async function blogFetch(path, options) {
   const response = await authenticatedFetch(`${BLOG_PREFIX}${path}`, options);
-  if (!response.ok) {
-    await parseBlogResponse(response, 'Blog request failed');
+  const json = await response.json().catch(() => null);
+  if (!response.ok || json?.success === false) {
+    const err = json || { message: 'Blog request failed' };
+    const message =
+      err.error?.safeUserMessage ||
+      err.error?.message ||
+      err.message ||
+      'Blog request failed';
+    const error = new Error(message);
+    error.payload = err;
+    throw error;
   }
-  return response.json();
+  return json;
 }
 
 // --- Categories ---
@@ -214,9 +223,24 @@ export const deleteArticle = async (id) => {
   return response.json();
 };
 
-export const publishArticle = async (id) => {
-  return blogFetch(`/articles/${id}/publish`, { method: 'PATCH' });
+export const importArticleJson = (article, { dryRun = false } = {}) =>
+  blogFetch('/articles/import', {
+    method: 'POST',
+    body: JSON.stringify({ article, dryRun }),
+  });
+
+export const publishArticle = async (id, body = {}) => {
+  return blogFetch(`/articles/${id}/publish`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
 };
+
+export const retryPublishArticle = (id) =>
+  blogFetch(`/articles/${id}/retry-publish`, { method: 'POST' });
+
+export const approveBlogMedia = (id) =>
+  blogFetch(`/media/${id}/approve`, { method: 'POST' });
 
 export const unpublishArticle = async (id, reason) => {
   return blogFetch(`/articles/${id}/unpublish`, {
