@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { FaPlus, FaTrash } from 'react-icons/fa';
-import { createBlogMedia, deleteBlogMedia, getBlogMedia } from '@/lib/blog';
+import { FaCheck, FaPlus, FaTrash } from 'react-icons/fa';
+import { approveBlogMedia, createBlogMedia, deleteBlogMedia, getBlogMedia } from '@/lib/blog';
 
 export default function MediaTab() {
   const [items, setItems] = useState([]);
@@ -43,11 +43,26 @@ export default function MediaTab() {
     }
   };
 
+  /** Media uploads land unapproved; publishing is blocked until rights are cleared. */
+  const handleApprove = async (id) => {
+    setError('');
+    try {
+      await approveBlogMedia(id);
+      await load();
+    } catch (err) {
+      setError(err.message || 'Failed to approve media');
+    }
+  };
+
   return (
     <div className="au-dash-page">
       {error && <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/50 text-red-400">{error}</div>}
       <div className="au-dash-card p-4">
         <h2 className="au-dash-card-title mb-3">Add media (URL + alt required)</h2>
+        <p className="text-sm au-dash-text-subtle mb-3">
+          New media is saved unapproved. Approve it here once rights are cleared — an article cannot publish while its
+          hero or OG image is unapproved.
+        </p>
         <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input
             required
@@ -93,6 +108,7 @@ export default function MediaTab() {
                 <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Alt</th>
                 <th className="px-4 py-3 text-left text-sm au-dash-text-muted">URL</th>
                 <th className="px-4 py-3 text-left text-sm au-dash-text-muted">ID</th>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Approval</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -104,15 +120,39 @@ export default function MediaTab() {
                   <td className="px-4 py-3 au-dash-text-subtle text-sm truncate max-w-[280px]">{row.url}</td>
                   <td className="px-4 py-3 au-dash-text-subtle text-xs">{row.media_id}</td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={async () => {
-                        await deleteBlogMedia(row._id);
-                        load();
-                      }}
-                      className="p-2 rounded-lg bg-red-500/20 text-red-400"
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        row.approved === true && row.rights_status === 'cleared'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-yellow-500/20 text-yellow-400'
+                      }`}
                     >
-                      <FaTrash className="w-4 h-4" />
-                    </button>
+                      {row.approved === true && row.rights_status === 'cleared'
+                        ? 'Approved'
+                        : `Not approved · ${row.rights_status || 'unverified'}`}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {row.approved === true && row.rights_status === 'cleared' ? null : (
+                        <button
+                          onClick={() => handleApprove(row._id)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs"
+                          title="Approve media (clears rights)"
+                        >
+                          <FaCheck className="w-3 h-3" /> Approve
+                        </button>
+                      )}
+                      <button
+                        onClick={async () => {
+                          await deleteBlogMedia(row._id);
+                          load();
+                        }}
+                        className="p-2 rounded-lg bg-red-500/20 text-red-400"
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

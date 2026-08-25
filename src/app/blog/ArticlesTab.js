@@ -11,8 +11,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaTimes,
-  FaMinus,
-  FaCheckCircle,
   FaTimesCircle,
 } from 'react-icons/fa';
 import {
@@ -30,9 +28,9 @@ import {
   getArticleAudit,
   getCategories,
   getTags,
-  importArticleJson,
 } from '@/lib/blog';
 import ArticlePreviewModal from '@/app/blog/ArticlePreviewModal';
+import ArticleEditor from '@/app/blog/ArticleEditor';
 
 const ARTICLE_TYPES = [
   { value: 'article', label: 'Article' },
@@ -50,16 +48,6 @@ const READING_LEVELS = [
   { value: 'beginner', label: 'Beginner' },
   { value: 'intermediate', label: 'Intermediate' },
   { value: 'advanced', label: 'Advanced' },
-];
-
-const SECTION_IDS = ['overview', 'details', 'examples', 'compare', 'related', 'sources'];
-
-const BLOCK_KINDS = [
-  { value: 'text', label: 'Text' },
-  { value: 'bullets', label: 'Bullets' },
-  { value: 'tile_row', label: 'Tile Row' },
-  { value: 'table', label: 'Table' },
-  { value: 'link_list', label: 'Link List' },
 ];
 
 function slugFromTitle(title) {
@@ -97,6 +85,17 @@ const DEFAULT_FORM = {
   related_article_ids: [],
 };
 
+/** Gate failures carry the exact fields that blocked them — show those, not just the headline. */
+function describeError(err, fallback) {
+  const headline = err?.message || fallback;
+  const fields = err?.payload?.error?.fieldErrors || [];
+  const detail = fields
+    .map((item) => (item.field ? `${item.field}: ${item.message}` : item.message))
+    .filter(Boolean)
+    .join(' · ');
+  return detail ? `${headline} — ${detail}` : headline;
+}
+
 export default function ArticlesTab() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,9 +112,6 @@ export default function ArticlesTab() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
-  const [importJson, setImportJson] = useState('');
-  const [importResult, setImportResult] = useState('');
   const [previewArticle, setPreviewArticle] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
@@ -257,72 +253,32 @@ export default function ArticlesTab() {
     setFormData((prev) => ({ ...prev, tags: arr }));
   };
 
-  const addSection = () => {
-    const used = formData.sections.map((s) => s.section_id);
-    const nextId = SECTION_IDS.find((id) => !used.includes(id)) || `section_${formData.sections.length}`;
-    setFormData((prev) => ({
-      ...prev,
-      sections: [
-        ...prev.sections,
-        { section_id: nextId, label: nextId.charAt(0).toUpperCase() + nextId.slice(1), blocks: [] },
-      ],
-    }));
-  };
-
-  const removeSection = (idx) => {
-    setFormData((prev) => ({
-      ...prev,
-      sections: prev.sections.filter((_, i) => i !== idx),
-    }));
-  };
-
-  const addBlock = (sectionIdx) => {
+  /** Fill from the pasted package, but never overwrite something already typed. */
+  const applyPastedMeta = (meta) => {
+    if (!meta || !Object.keys(meta).length) return;
     setFormData((prev) => {
-      const sections = [...prev.sections];
-      const blocks = sections[sectionIdx].blocks || [];
-      blocks.push({ kind: 'text', text: '', clamp_lines_default: 4 });
-      sections[sectionIdx] = { ...sections[sectionIdx], blocks };
-      return { ...prev, sections };
-    });
-  };
-
-  const updateBlock = (sectionIdx, blockIdx, field, value) => {
-    setFormData((prev) => {
-      const sections = JSON.parse(JSON.stringify(prev.sections));
-      const block = sections[sectionIdx].blocks[blockIdx];
-      if (field === 'kind') {
-        const kind = value;
-        if (kind === 'text') {
-          sections[sectionIdx].blocks[blockIdx] = { kind: 'text', text: block.text || '', clamp_lines_default: 4 };
-        } else if (kind === 'bullets') {
-          sections[sectionIdx].blocks[blockIdx] = {
-            kind: 'bullets',
-            bullets: Array.isArray(block.bullets) ? block.bullets : [''],
-            clamp_items_default: 5,
-          };
-        } else {
-          sections[sectionIdx].blocks[blockIdx] = { ...block, kind, [field]: value };
-        }
-      } else {
-        block[field] = value;
+      const next = { ...prev, seo: { ...prev.seo } };
+      if (!prev.title.trim() && meta.title) {
+        next.title = meta.title;
+        if (!prev.slug.trim()) next.slug = slugFromTitle(meta.title);
       }
-      return { ...prev, sections };
-    });
-  };
-
-  const updateBullets = (sectionIdx, blockIdx, bullets) => {
-    setFormData((prev) => {
-      const sections = JSON.parse(JSON.stringify(prev.sections));
-      sections[sectionIdx].blocks[blockIdx].bullets = bullets;
-      return { ...prev, sections };
-    });
-  };
-
-  const removeBlock = (sectionIdx, blockIdx) => {
-    setFormData((prev) => {
-      const sections = [...prev.sections];
-      sections[sectionIdx].blocks = sections[sectionIdx].blocks.filter((_, i) => i !== blockIdx);
-      return { ...prev, sections };
+      if (!prev.slug.trim() && meta.slug) next.slug = meta.slug;
+      if (!prev.summary.trim() && meta.summary) next.summary = meta.summary;
+      if (!prev.tags.length && meta.tags?.length) next.tags = meta.tags;
+      if (meta.readTimeMin) next.read_time_min = meta.readTimeMin;
+      // Categories are locked to four; a package label like "Car Financing" is left
+      // for the editor to choose rather than guessed at.
+      if (!prev.categorySlug && meta.category) {
+        const match = categories.find(
+          (row) => row.slug === meta.category.toLowerCase() || row.name?.toLowerCase() === meta.category.toLowerCase(),
+        );
+        if (match) next.categorySlug = match.slug;
+      }
+      if (!prev.seo.meta_title?.trim() && meta.metaTitle) next.seo.meta_title = meta.metaTitle;
+      if (!prev.seo.meta_description?.trim() && meta.metaDescription) {
+        next.seo.meta_description = meta.metaDescription;
+      }
+      return next;
     });
   };
 
@@ -380,36 +336,7 @@ export default function ArticlesTab() {
       await publishArticle(id);
       fetchArticles();
     } catch (err) {
-      const fields = err.payload?.error?.fieldErrors || [];
-      const extra = fields[0]?.message ? ` — ${fields[0].message}` : '';
-      setError(`${err.message || 'Failed to publish'}${extra}`);
-    }
-  };
-
-  const handleImportJson = async (dryRun) => {
-    setError('');
-    setImportResult('');
-    let parsed;
-    try {
-      parsed = JSON.parse(importJson);
-    } catch {
-      setError('Malformed JSON');
-      return;
-    }
-    try {
-      const res = await importArticleJson(parsed, { dryRun });
-      const article = res.data?.article;
-      setImportResult(
-        `${dryRun ? 'Dry run' : 'Imported'} as ${article?.status || 'draft'} / ${article?.visibility || 'private'} / noindex=${article?.seo?.noindex !== false}`
-      );
-      if (!dryRun) {
-        setImportOpen(false);
-        fetchArticles();
-      }
-    } catch (err) {
-      const fields = err.payload?.error?.fieldErrors || [];
-      const extra = fields[0]?.message ? ` — ${fields[0].message}` : '';
-      setError(`${err.message || 'Import failed'}${extra}`);
+      setError(describeError(err, 'Failed to publish'));
     }
   };
 
@@ -431,7 +358,7 @@ export default function ArticlesTab() {
       await submitArticleReview(id);
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to submit for review');
+      setError(describeError(err, 'Failed to submit for review'));
     }
   };
 
@@ -441,7 +368,7 @@ export default function ArticlesTab() {
       await approveArticle(id);
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to approve');
+      setError(describeError(err, 'Failed to approve'));
     }
   };
 
@@ -465,7 +392,7 @@ export default function ArticlesTab() {
       await scheduleArticle(id, new Date(publishAt).toISOString());
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to schedule');
+      setError(describeError(err, 'Failed to schedule'));
     }
   };
 
@@ -629,46 +556,16 @@ export default function ArticlesTab() {
       <div className="au-dash-card overflow-hidden">
         <div className="p-4 au-dash-tabs-underline flex justify-between items-center">
           <h2 className="au-dash-card-title">Articles</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setImportOpen((open) => !open)}
-              className="flex items-center gap-2 px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg font-medium"
-            >
-              Import JSON
-            </button>
-            <button
-              onClick={openCreateForm}
-              className="flex items-center gap-2 au-dash-btn font-medium"
-            >
-              <FaPlus className="w-4 h-4" />
-              Add Article
-            </button>
-          </div>
+          <button
+            onClick={openCreateForm}
+            className="flex items-center gap-2 au-dash-btn font-medium"
+          >
+            <FaPlus className="w-4 h-4" />
+            Add Article
+          </button>
         </div>
 
-        {importOpen && (
-          <div className="p-4 border-b border-[rgba(255,255,255,0.1)] space-y-3">
-            <p className="text-sm au-dash-text-muted">
-              ChatGPT JSON imports as Draft / Private / noindex. Published, public, and index fields are ignored.
-            </p>
-            <textarea
-              value={importJson}
-              onChange={(e) => setImportJson(e.target.value)}
-              rows={10}
-              className="au-dash-input w-full font-mono text-xs"
-              placeholder='{"title":"...","slug":"...","categorySlug":"buying"}'
-            />
-            <div className="flex gap-2">
-              <button type="button" onClick={() => handleImportJson(true)} className="px-4 py-2 au-dash-tab rounded-lg">
-                Dry run
-              </button>
-              <button type="button" onClick={() => handleImportJson(false)} className="au-dash-btn">
-                Import as Draft
-              </button>
-            </div>
-            {importResult && <p className="text-sm text-emerald-300">{importResult}</p>}
-          </div>
-        )}
+        {loading ? (
           <div className="p-12 text-center">
             <div className="au-dash-spinner mx-auto" />
             <p className="au-dash-text-subtle mt-4">Loading articles...</p>
@@ -766,10 +663,10 @@ export default function ArticlesTab() {
                             <>
                               <button
                                 onClick={() => handlePublish(art._id)}
-                                className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400"
-                                title="Publish"
+                                className="px-2 py-1 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-300 text-xs"
+                                title="Publish now"
                               >
-                                <FaCheckCircle className="w-4 h-4" />
+                                Publish
                               </button>
                               <button
                                 onClick={() => handleSchedule(art._id)}
@@ -783,10 +680,10 @@ export default function ArticlesTab() {
                           {art.status === 'scheduled' && (
                             <button
                               onClick={() => handlePublish(art._id)}
-                              className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400"
+                              className="px-2 py-1 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-300 text-xs"
                               title="Publish now"
                             >
-                              <FaCheckCircle className="w-4 h-4" />
+                              Publish now
                             </button>
                           )}
                           {(art.status === 'published' || art.status === 'updated') && (
@@ -1126,131 +1023,14 @@ export default function ArticlesTab() {
                 </div>
               </div>
 
-              {/* Sections */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-md font-semibold au-dash-text-strong">Sections</h4>
-                  <button
-                    type="button"
-                    onClick={addSection}
-                    className="px-3 py-1 au-dash-tab au-dash-text-muted rounded text-sm"
-                  >
-                    + Add Section
-                  </button>
-                </div>
-                {formData.sections.map((sec, si) => (
-                  <div key={si} className="au-dash-card p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={sec.section_id}
-                          onChange={(e) =>
-                            setFormData((p) => {
-                              const s = [...p.sections];
-                              s[si] = { ...s[si], section_id: e.target.value };
-                              return { ...p, sections: s };
-                            })
-                          }
-                          placeholder="e.g. overview"
-                          className="au-dash-input w-32 !min-h-0 py-1 text-sm"
-                        />
-                        <input
-                          type="text"
-                          value={sec.label}
-                          onChange={(e) =>
-                            setFormData((p) => {
-                              const s = [...p.sections];
-                              s[si] = { ...s[si], label: e.target.value };
-                              return { ...p, sections: s };
-                            })
-                          }
-                          placeholder="e.g. Overview"
-                          className="au-dash-input w-40 !min-h-0 py-1 text-sm"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeSection(si)}
-                        className="p-1 text-red-400 hover:bg-red-500/20 rounded"
-                      >
-                        <FaMinus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      {(sec.blocks || []).map((blk, bi) => (
-                        <div key={bi} className="flex gap-2 items-start p-2 bg-[rgba(8,10,18,0.35)] rounded">
-                          <select
-                            value={blk.kind}
-                            onChange={(e) => updateBlock(si, bi, 'kind', e.target.value)}
-                            className="px-2 py-1 au-dash-modal rounded text-sm au-dash-text-strong"
-                          >
-                            {BLOCK_KINDS.map((b) => (
-                              <option key={b.value} value={b.value}>
-                                {b.label}
-                              </option>
-                            ))}
-                          </select>
-                          {blk.kind === 'text' && (
-                            <textarea
-                              value={blk.text || ''}
-                              onChange={(e) => updateBlock(si, bi, 'text', e.target.value)}
-                              rows={2}
-                              className="flex-1 px-2 py-1 au-dash-modal rounded text-sm au-dash-text-strong placeholder-slate-500"
-                              placeholder="e.g. Key points about comparing trim levels..."
-                            />
-                          )}
-                          {blk.kind === 'bullets' && (
-                            <div className="flex-1 space-y-1">
-                              {(blk.bullets || ['']).map((b, i) => (
-                                <input
-                                  key={i}
-                                  type="text"
-                                  value={b}
-                                  onChange={(e) => {
-                                    const arr = [...(blk.bullets || [])];
-                                    arr[i] = e.target.value;
-                                    updateBullets(si, bi, arr);
-                                  }}
-                                  className="w-full px-2 py-1 au-dash-modal rounded text-sm au-dash-text-strong placeholder-slate-500"
-                                  placeholder={`e.g. Bullet point ${i + 1}`}
-                                />
-                              ))}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  updateBullets(si, bi, [...(blk.bullets || []), ''])
-                                }
-                                className="text-xs au-dash-text-strong hover:underline"
-                              >
-                                + Add bullet
-                              </button>
-                            </div>
-                          )}
-                          {(blk.kind === 'tile_row' || blk.kind === 'table' || blk.kind === 'link_list') && (
-                            <div className="flex-1 px-2 py-1 au-dash-text-subtle text-sm">
-                              (Edit in JSON or extend editor)
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removeBlock(si, bi)}
-                            className="p-1 text-red-400 hover:bg-red-500/20 rounded"
-                          >
-                            <FaMinus className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addBlock(si)}
-                        className="text-sm au-dash-text-strong hover:underline"
-                      >
-                        + Add block
-                      </button>
-                    </div>
-                  </div>
-                ))}
+              {/* Body */}
+              <div className="space-y-2">
+                <h4 className="text-md font-semibold au-dash-text-strong">Body</h4>
+                <ArticleEditor
+                  value={formData.sections}
+                  onChange={(sections) => setFormData((p) => ({ ...p, sections }))}
+                  onMetaDetected={applyPastedMeta}
+                />
               </div>
 
               {/* Related Articles */}
