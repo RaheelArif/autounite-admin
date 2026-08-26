@@ -71,9 +71,9 @@ assert.equal(roundTripped[0].blocks.length, 2, 'module block re-attached after e
 assert.equal(roundTripped[0].blocks[1].kind, 'source_note');
 
 // A source that drops heading styles still yields sections from its bold lines.
-const boldOnly = '<p><b>Where did 19.42% come from?</b></p><p>Body copy that is not bold.</p>';
+const boldOnly = '<p><b>Where did 19.42% come from</b></p><p>Body copy that is not bold.</p>';
 const promoted = promoteBoldHeadings(boldOnly);
-assert.match(promoted, /<h2>Where did 19\.42% come from\?<\/h2>/);
+assert.match(promoted, /<h2>Where did 19\.42% come from<\/h2>/);
 assert.equal(htmlToSections(promoted).length, 1);
 assert.equal(
   promoteBoldHeadings('<h2>Real heading</h2><p><b>Bold lead-in.</b></p>'),
@@ -88,12 +88,13 @@ const boldNonHeadings = [
   'No.',
   'This may actually be the approval I have available today.',
   '“My score is 620. Why isn’t my rate better?”',
+  'How in the world is that a good approval?',
 ];
 for (const line of boldNonHeadings) {
   const out = promoteBoldHeadings(`<p><b>${line}</b></p><p>Body copy.</p>`);
   assert.ok(!out.includes('<h2>'), `bold emphasis is not a heading: ${line}`);
 }
-for (const line of ['19.42% APR', 'Sometimes those four hours are ugly', 'So when is 19.42% a good approval?']) {
+for (const line of ['19.42% APR', 'Sometimes those four hours are ugly', 'Negative equity makes this even harder']) {
   const out = promoteBoldHeadings(`<p><b>${line}</b></p><p>Body copy.</p>`);
   assert.ok(out.includes(`<h2>${line}</h2>`), `a real heading is still promoted: ${line}`);
 }

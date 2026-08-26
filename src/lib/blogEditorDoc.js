@@ -327,13 +327,13 @@ function entirelyBold(element) {
 
 /**
  * A bold line is only a heading when the source dropped its heading styles, and even
- * then bold is also used for pull quotes and emphasis. Two signals separate them:
- * a heading does not end in a full stop, and a pull quote opens with a quote mark.
+ * then bold is also used for pull quotes and emphasis. Signals that rule a line out:
+ * opens with a quote mark, ends in sentence punctuation (including ?!), or is too long.
  */
 function looksLikeHeading(text) {
   if (!text || text.length > 120) return false;
   if (/^["'“‘]/.test(text)) return false;
-  return !/[.,;]$/.test(text);
+  return !/[.?!,;]$/.test(text);
 }
 
 export function promoteBoldHeadings(html) {
