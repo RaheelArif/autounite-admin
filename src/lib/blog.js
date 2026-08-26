@@ -98,6 +98,8 @@ export const deleteCategory = async (id) => {
   return response.json();
 };
 
+export const purgeCategory = (id) => blogFetch(`/categories/${id}/purge`, { method: 'DELETE' });
+
 // --- Tags ---
 
 export const getTags = async (params = {}) => {
@@ -159,6 +161,8 @@ export const deleteTag = async (id) => {
   }
   return response.json();
 };
+
+export const purgeTag = (id) => blogFetch(`/tags/${id}/purge`, { method: 'DELETE' });
 
 // --- Articles ---
 
@@ -222,6 +226,10 @@ export const deleteArticle = async (id) => {
   }
   return response.json();
 };
+
+/** Permanent removal. The API refuses while the article is still public. */
+export const purgeArticle = (id, reason) =>
+  blogFetch(`/articles/${id}/purge`, { method: 'DELETE', body: JSON.stringify({ reason }) });
 
 export const importArticleJson = (article, { dryRun = false } = {}) =>
   blogFetch('/articles/import', {
@@ -299,6 +307,8 @@ export const updateBlogMedia = (id, body) =>
 
 export const deleteBlogMedia = (id) => blogFetch(`/media/${id}`, { method: 'DELETE' });
 
+export const purgeBlogMedia = (id) => blogFetch(`/media/${id}/purge`, { method: 'DELETE' });
+
 export const getBlogAuthors = () => blogFetch('/authors');
 
 export const createBlogAuthor = (body) =>
@@ -308,6 +318,8 @@ export const updateBlogAuthor = (id, body) =>
   blogFetch(`/authors/${id}`, { method: 'PUT', body: JSON.stringify(body) });
 
 export const deleteBlogAuthor = (id) => blogFetch(`/authors/${id}`, { method: 'DELETE' });
+
+export const purgeBlogAuthor = (id) => blogFetch(`/authors/${id}/purge`, { method: 'DELETE' });
 
 export const getDistribution = (article_id) => {
   const q = article_id ? `?article_id=${encodeURIComponent(article_id)}` : '';
@@ -319,6 +331,8 @@ export const createDistribution = (body) =>
 
 export const updateDistribution = (id, body) =>
   blogFetch(`/distribution/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+
+export const deleteDistribution = (id) => blogFetch(`/distribution/${id}`, { method: 'DELETE' });
 
 export const getBlogReports = () => blogFetch('/reports');
 

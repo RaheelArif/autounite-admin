@@ -1,6 +1,7 @@
 'use client';
 
 import { FaTimes } from 'react-icons/fa';
+import { normalizeMediaUrl } from '@/lib/blogMediaUrl';
 
 function BlockView({ block }) {
   if (!block) return null;
@@ -96,7 +97,8 @@ export default function ArticlePreviewModal({ article, onClose }) {
   if (!article) return null;
 
   const seo = article.seo || {};
-  const hero = article.hero_image_url || seo.og_image_url;
+  const heroRaw = article.hero_image_url || seo.og_image_url;
+  const hero = heroRaw ? normalizeMediaUrl(heroRaw) : '';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
@@ -132,7 +134,23 @@ export default function ArticlePreviewModal({ article, onClose }) {
             {article.slug ? ` · /${article.slug}` : ''}
           </p>
           {hero ? (
-            <img src={hero} alt={article.title || ''} className="w-full rounded-lg max-h-72 object-cover" />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={hero}
+              alt={article.hero_image_alt || article.title || ''}
+              className="w-full rounded-lg max-h-72 object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const note = e.currentTarget.nextElementSibling;
+                if (note) note.hidden = false;
+              }}
+            />
+          ) : null}
+          {hero ? (
+            <p className="text-sm text-red-400" hidden>
+              Hero image failed to load. On Media tab click “Fix link” for Drive URLs, then re-pick the image on this
+              article and Save.
+            </p>
           ) : null}
           {article.summary ? <p className="au-dash-text-muted leading-relaxed">{article.summary}</p> : null}
           {(article.sections || []).map((sec, si) => (

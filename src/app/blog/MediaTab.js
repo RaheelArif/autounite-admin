@@ -1,15 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { FaCheck, FaPlus, FaTrash } from 'react-icons/fa';
-import { approveBlogMedia, createBlogMedia, deleteBlogMedia, getBlogMedia } from '@/lib/blog';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FaCheck, FaCopy, FaEdit, FaEye, FaPlus, FaTimes, FaTrash, FaWrench } from 'react-icons/fa';
+import { approveBlogMedia, createBlogMedia, deleteBlogMedia, getBlogMedia, updateBlogMedia } from '@/lib/blog';
+import { isBrokenDriveEmbedUrl, normalizeMediaUrl } from '@/lib/blogMediaUrl';
+
+const EMPTY_FORM = { url: '', alt: '', kind: 'hero' };
 
 export default function MediaTab() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ url: '', alt: '', kind: 'hero' });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [editingId, setEditingId] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [previewBroken, setPreviewBroken] = useState(false);
+  const [formPreviewBroken, setFormPreviewBroken] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [copiedId, setCopiedId] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -28,22 +36,71 @@ export default function MediaTab() {
     load();
   }, [load]);
 
-  const handleCreate = async (e) => {
+  const displayUrl = useMemo(() => normalizeMediaUrl(form.url), [form.url]);
+
+  useEffect(() => {
+    setFormPreviewBroken(false);
+  }, [displayUrl]);
+
+  const resetForm = () => {
+    setForm(EMPTY_FORM);
+    setEditingId(null);
+    setFormPreviewBroken(false);
+  };
+
+  const applyUrl = (raw) => {
+    const next = normalizeMediaUrl(raw);
+    setForm((p) => ({ ...p, url: next }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
     try {
-      await createBlogMedia(form);
-      setForm({ url: '', alt: '', kind: 'hero' });
+      const body = {
+        ...form,
+        url: normalizeMediaUrl(form.url),
+        alt: form.alt.trim(),
+      };
+      if (editingId) {
+        await updateBlogMedia(editingId, body);
+      } else {
+        await createBlogMedia(body);
+      }
+      resetForm();
       await load();
     } catch (err) {
-      setError(err.message || 'Failed to save media');
+      setError(err.message || (editingId ? 'Failed to update media' : 'Failed to save media'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  /** Media uploads land unapproved; publishing is blocked until rights are cleared. */
+  const startEdit = (row) => {
+    setEditingId(row._id);
+    setForm({
+      url: normalizeMediaUrl(row.url || ''),
+      alt: row.alt || '',
+      kind: row.kind || 'hero',
+    });
+    setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /** Rewrite a stored Drive /view or uc link to the embeddable lh3 URL. */
+  const handleFixDriveUrl = async (row) => {
+    setError('');
+    try {
+      const url = normalizeMediaUrl(row.url);
+      if (url === row.url) return;
+      await updateBlogMedia(row._id, { url, alt: row.alt, kind: row.kind });
+      await load();
+    } catch (err) {
+      setError(err.message || 'Failed to fix Drive URL');
+    }
+  };
+
   const handleApprove = async (id) => {
     setError('');
     try {
@@ -54,22 +111,40 @@ export default function MediaTab() {
     }
   };
 
+  const handleCopyUrl = async (row) => {
+    setError('');
+    try {
+      await navigator.clipboard.writeText(row.url);
+      setCopiedId(row._id);
+      window.setTimeout(() => setCopiedId((current) => (current === row._id ? '' : current)), 1500);
+    } catch {
+      setError('Could not copy URL — select it and copy manually');
+    }
+  };
+
   return (
     <div className="au-dash-page">
       {error && <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/50 text-red-400">{error}</div>}
-      <div className="au-dash-card p-4">
-        <h2 className="au-dash-card-title mb-3">Add media (URL + alt required)</h2>
-        <p className="text-sm au-dash-text-subtle mb-3">
-          New media is saved unapproved. Approve it here once rights are cleared — an article cannot publish while its
-          hero or OG image is unapproved.
+      <div className="au-dash-card p-4 space-y-3">
+        <h2 className="au-dash-card-title">{editingId ? 'Edit media' : 'Add media'}</h2>
+        <p className="text-sm au-dash-text-subtle">
+          Paste any Google Drive share link — it converts automatically to an image URL that works in the blog. Approve
+          after save; then pick it on the article form (or Copy into Hero / OG).
         </p>
-        <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input
             required
             type="url"
-            placeholder="https://..."
+            placeholder="Paste Drive share link or https://… image URL"
             value={form.url}
             onChange={(e) => setForm((p) => ({ ...p, url: e.target.value }))}
+            onBlur={(e) => applyUrl(e.target.value)}
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData('text');
+              if (!pasted) return;
+              e.preventDefault();
+              applyUrl(pasted);
+            }}
             className="au-dash-input md:col-span-2"
           />
           <input
@@ -92,11 +167,49 @@ export default function MediaTab() {
               <option value="other">Other</option>
             </select>
             <button type="submit" disabled={submitting} className="au-dash-btn flex items-center gap-2">
-              <FaPlus className="w-3 h-3" /> Add
+              {editingId ? (
+                <>
+                  <FaCheck className="w-3 h-3" /> Save
+                </>
+              ) : (
+                <>
+                  <FaPlus className="w-3 h-3" /> Add
+                </>
+              )}
             </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-3 py-2 rounded-lg bg-white/10 au-dash-text-muted text-sm"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </form>
+
+        {displayUrl && (
+          <div className="rounded-lg border border-white/10 bg-black/30 p-3 space-y-2">
+            <p className="text-xs au-dash-text-subtle">Live preview (must load before you save):</p>
+            {formPreviewBroken ? (
+              <p className="text-sm text-red-400">
+                Image did not load. Confirm Drive sharing is “Anyone with the link → Viewer”, then paste the link again.
+              </p>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={displayUrl}
+                alt={form.alt || 'Media preview'}
+                className="max-h-48 rounded object-contain bg-black/40"
+                onError={() => setFormPreviewBroken(true)}
+              />
+            )}
+            <p className="text-xs au-dash-text-subtle break-all">{displayUrl}</p>
+          </div>
+        )}
       </div>
+
       <div className="au-dash-card overflow-hidden">
         {loading ? (
           <div className="p-8 text-center au-dash-text-subtle">Loading media...</div>
@@ -117,7 +230,43 @@ export default function MediaTab() {
                 <tr key={row._id} className="border-t border-white/10">
                   <td className="px-4 py-3 au-dash-text">{row.kind}</td>
                   <td className="px-4 py-3 au-dash-text">{row.alt}</td>
-                  <td className="px-4 py-3 au-dash-text-subtle text-sm truncate max-w-[280px]">{row.url}</td>
+                  <td className="px-4 py-3 au-dash-text-subtle text-sm max-w-[280px]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="truncate" title={row.url}>
+                        {row.url}
+                      </span>
+                      {isBrokenDriveEmbedUrl(row.url) && (
+                        <button
+                          type="button"
+                          onClick={() => handleFixDriveUrl(row)}
+                          className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-xs"
+                          title="Convert Drive share link to an embeddable image URL"
+                        >
+                          <FaWrench className="w-3 h-3" /> Fix link
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleCopyUrl(row)}
+                        className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-xs ${
+                          copiedId === row._id
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : 'bg-white/10 au-dash-text-muted hover:au-dash-text-strong'
+                        }`}
+                        title="Copy URL for the article form"
+                      >
+                        {copiedId === row._id ? (
+                          <>
+                            <FaCheck className="w-3 h-3" /> Copied
+                          </>
+                        ) : (
+                          <>
+                            <FaCopy className="w-3 h-3" /> Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 au-dash-text-subtle text-xs">{row.media_id}</td>
                   <td className="px-4 py-3">
                     <span
@@ -134,6 +283,25 @@ export default function MediaTab() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPreviewBroken(false);
+                          setPreview(row);
+                        }}
+                        className="p-2 rounded-lg bg-white/10 au-dash-text-muted"
+                        title="Preview image"
+                      >
+                        <FaEye className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(row)}
+                        className="p-2 rounded-lg bg-blue-500/20 text-blue-300"
+                        title="Edit media"
+                      >
+                        <FaEdit className="w-4 h-4" />
+                      </button>
                       {row.approved === true && row.rights_status === 'cleared' ? null : (
                         <button
                           onClick={() => handleApprove(row._id)}
@@ -149,6 +317,7 @@ export default function MediaTab() {
                           load();
                         }}
                         className="p-2 rounded-lg bg-red-500/20 text-red-400"
+                        title="Delete media"
                       >
                         <FaTrash className="w-4 h-4" />
                       </button>
@@ -160,6 +329,53 @@ export default function MediaTab() {
           </table>
         )}
       </div>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setPreview(null)}
+          role="presentation"
+        >
+          <div
+            className="au-dash-card max-w-3xl w-full p-4 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Media preview"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="au-dash-text-strong font-medium truncate">
+                  {preview.kind} · {preview.media_id}
+                </p>
+                <p className="text-sm au-dash-text-muted">{preview.alt}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreview(null)}
+                className="p-2 rounded-lg bg-white/10 au-dash-text-muted"
+                title="Close preview"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+            {previewBroken ? (
+              <p className="text-sm text-red-400 p-4">
+                Image failed to load. Click <strong>Fix link</strong> on the row if this is an old Drive /view URL.
+              </p>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={preview.url}
+                alt={preview.alt || 'Media preview'}
+                className="w-full max-h-[70vh] object-contain rounded-lg bg-black/40"
+                onError={() => setPreviewBroken(true)}
+              />
+            )}
+            <p className="text-xs au-dash-text-subtle break-all">{preview.url}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

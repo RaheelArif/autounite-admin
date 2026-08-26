@@ -12,6 +12,7 @@ import {
   FaChevronRight,
   FaTimes,
   FaTimesCircle,
+  FaArchive as FaBoxArchive,
 } from 'react-icons/fa';
 import {
   getArticles,
@@ -25,12 +26,16 @@ import {
   requestArticleRevision,
   scheduleArticle,
   archiveArticle,
+  purgeArticle,
   getArticleAudit,
   getCategories,
   getTags,
+  getBlogMedia,
 } from '@/lib/blog';
 import ArticlePreviewModal from '@/app/blog/ArticlePreviewModal';
 import ArticleEditor from '@/app/blog/ArticleEditor';
+import { normalizeMediaUrl } from '@/lib/blogMediaUrl';
+import { useDialog } from '@/components/Dialog';
 
 const ARTICLE_TYPES = [
   { value: 'article', label: 'Article' },
@@ -67,6 +72,14 @@ const DEFAULT_SEO = {
   schema_org_type: 'Article',
 };
 
+const DEFAULT_LINEAGE = {
+  original_platform: '',
+  original_url: '',
+  original_published_at: '',
+  last_verified_at: '',
+  auto_unite_published_at: '',
+};
+
 const DEFAULT_FORM = {
   title: '',
   slug: '',
@@ -76,6 +89,7 @@ const DEFAULT_FORM = {
   categorySlug: '',
   reading_level: 'intermediate',
   hero_image_url: '',
+  hero_image_alt: '',
   author_name: '',
   status: 'draft',
   read_time_min: 5,
@@ -83,6 +97,9 @@ const DEFAULT_FORM = {
   seo: { ...DEFAULT_SEO },
   sections: [],
   related_article_ids: [],
+  sources: [],
+  decide_first: null,
+  lineage: { ...DEFAULT_LINEAGE },
 };
 
 /** Gate failures carry the exact fields that blocked them — show those, not just the headline. */
@@ -97,6 +114,7 @@ function describeError(err, fallback) {
 }
 
 export default function ArticlesTab() {
+  const dialog = useDialog();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -121,6 +139,7 @@ export default function ArticlesTab() {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [allArticles, setAllArticles] = useState([]);
+  const [approvedMedia, setApprovedMedia] = useState([]);
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
@@ -182,12 +201,25 @@ export default function ArticlesTab() {
     }
   }, []);
 
+  const fetchApprovedMedia = useCallback(async () => {
+    try {
+      const res = await getBlogMedia({ page: 1, limit: 100 });
+      const rows = res.data?.media || [];
+      setApprovedMedia(
+        rows.filter((row) => row.approved === true && row.rights_status === 'cleared' && row.url),
+      );
+    } catch {
+      setApprovedMedia([]);
+    }
+  }, []);
+
   useEffect(() => {
     if (formOpen) {
       fetchCategoriesAndTags();
       fetchAllArticles();
+      fetchApprovedMedia();
     }
-  }, [formOpen, fetchCategoriesAndTags, fetchAllArticles]);
+  }, [formOpen, fetchCategoriesAndTags, fetchAllArticles, fetchApprovedMedia]);
 
   const openCreateForm = () => {
     setEditingArticle(null);
@@ -215,6 +247,7 @@ export default function ArticlesTab() {
         categorySlug: a.categorySlug || '',
         reading_level: a.reading_level || 'intermediate',
         hero_image_url: a.hero_image_url || '',
+        hero_image_alt: a.hero_image_alt || '',
         author_name: a.author_name || '',
         status: a.status || 'draft',
         read_time_min: a.read_time_min ?? 5,
@@ -225,6 +258,9 @@ export default function ArticlesTab() {
         },
         sections: Array.isArray(a.sections) ? JSON.parse(JSON.stringify(a.sections)) : [],
         related_article_ids: Array.isArray(a.related_article_ids) ? a.related_article_ids : [],
+        sources: Array.isArray(a.sources) ? a.sources : [],
+        decide_first: a.decide_first || null,
+        lineage: { ...DEFAULT_LINEAGE, ...(a.lineage || {}) },
       });
       setFormOpen(true);
     } catch (err) {
@@ -254,10 +290,10 @@ export default function ArticlesTab() {
   };
 
   /** Fill from the pasted package, but never overwrite something already typed. */
-  const applyPastedMeta = (meta) => {
-    if (!meta || !Object.keys(meta).length) return;
+  const applyPastedPackage = ({ meta, decideFirst, sources } = {}) => {
+    if (!meta) return;
     setFormData((prev) => {
-      const next = { ...prev, seo: { ...prev.seo } };
+      const next = { ...prev, seo: { ...prev.seo }, lineage: { ...prev.lineage } };
       if (!prev.title.trim() && meta.title) {
         next.title = meta.title;
         if (!prev.slug.trim()) next.slug = slugFromTitle(meta.title);
@@ -266,6 +302,11 @@ export default function ArticlesTab() {
       if (!prev.summary.trim() && meta.summary) next.summary = meta.summary;
       if (!prev.tags.length && meta.tags?.length) next.tags = meta.tags;
       if (meta.readTimeMin) next.read_time_min = meta.readTimeMin;
+      if (!prev.author_name.trim() && meta.authorName) next.author_name = meta.authorName;
+      if (!prev.hero_image_alt.trim() && meta.heroAlt) next.hero_image_alt = meta.heroAlt;
+      if (meta.contentType && ARTICLE_TYPES.some((row) => row.value === meta.contentType.toLowerCase())) {
+        next.type = meta.contentType.toLowerCase();
+      }
       // Categories are locked to four; a package label like "Car Financing" is left
       // for the editor to choose rather than guessed at.
       if (!prev.categorySlug && meta.category) {
@@ -277,6 +318,32 @@ export default function ArticlesTab() {
       if (!prev.seo.meta_title?.trim() && meta.metaTitle) next.seo.meta_title = meta.metaTitle;
       if (!prev.seo.meta_description?.trim() && meta.metaDescription) {
         next.seo.meta_description = meta.metaDescription;
+      }
+      // The canonical URL is derived from our own origin and slug on save; a package
+      // value is only accepted when it already points at that article.
+      if (!prev.seo.canonical_url?.trim() && meta.canonicalUrl?.includes(`/blog/${next.slug}`)) {
+        next.seo.canonical_url = meta.canonicalUrl;
+      }
+      if (meta.originalPlatform && !prev.lineage.original_url) {
+        next.lineage.original_platform = meta.originalPlatform.toLowerCase().replace(/\s+/g, '_');
+      }
+      if (meta.originalUrl) next.lineage.original_url = meta.originalUrl;
+      if (meta.originalPublishedAt) next.lineage.original_published_at = meta.originalPublishedAt;
+      if (meta.lastVerifiedAt) next.lineage.last_verified_at = meta.lastVerifiedAt;
+      if (decideFirst && !prev.decide_first) {
+        next.decide_first = {
+          what_matters: decideFirst.whatMatters || [],
+          watch_this: decideFirst.watchThis || [],
+          your_next_move: decideFirst.yourNextMove || [],
+        };
+      }
+      if (sources?.length && !prev.sources.length) {
+        next.sources = sources.map((row) => ({
+          label: row.label || '',
+          url: row.url,
+          source_name: row.sourceName || '',
+          verified_at: row.verifiedAt || null,
+        }));
       }
       return next;
     });
@@ -295,15 +362,28 @@ export default function ArticlesTab() {
         tags: formData.tags,
         categorySlug: formData.categorySlug || undefined,
         reading_level: formData.reading_level,
-        hero_image_url: formData.hero_image_url || undefined,
+        hero_image_url: formData.hero_image_url
+          ? normalizeMediaUrl(formData.hero_image_url)
+          : undefined,
+        hero_image_alt: formData.hero_image_alt || undefined,
         author_name: formData.author_name || undefined,
         status: formData.status,
         read_time_min: Number(formData.read_time_min) || 5,
         badge: formData.badge || undefined,
-        seo: formData.seo,
+        seo: {
+          ...formData.seo,
+          og_image_url: formData.seo.og_image_url
+            ? normalizeMediaUrl(formData.seo.og_image_url)
+            : formData.seo.og_image_url,
+        },
         sections: formData.sections,
         related_article_ids: formData.related_article_ids,
+        sources: formData.sources.length ? formData.sources : undefined,
+        decide_first: formData.decide_first || undefined,
+        // Blank lineage rows would overwrite the defaults the API owns.
+        lineage: Object.fromEntries(Object.entries(formData.lineage).filter(([, value]) => value)),
       };
+      if (!Object.keys(payload.lineage).length) delete payload.lineage;
       if (editingArticle) {
         await updateArticle(editingArticle._id, payload);
       } else {
@@ -318,15 +398,32 @@ export default function ArticlesTab() {
     }
   };
 
-  const handleDelete = async (id) => {
-    const reason = window.prompt('Archive reason (required):');
-    if (!reason) return;
+  /** Permanent, and only for content the public has never seen. */
+  const handleDelete = async (article) => {
+    if (['published', 'updated'].includes(article.status)) {
+      await dialog.notice({
+        title: 'Unpublish first',
+        message:
+          'This article is live. Unpublish it so the URL is redirected and the search index is cleared, then delete it.',
+      });
+      return;
+    }
+    const confirmed = await dialog.confirm({
+      title: 'Delete permanently',
+      message: `“${article.title}” and its revision history will be removed from the database. This cannot be undone — use Archive if you only want it out of the way.`,
+      label: `Type the slug to confirm: ${article.slug}`,
+      placeholder: article.slug,
+      confirmText: article.slug,
+      confirmLabel: 'Delete forever',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
     setError('');
     try {
-      await archiveArticle(id, reason);
+      await purgeArticle(article._id, 'deleted from admin');
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to archive');
+      setError(describeError(err, 'Failed to delete'));
     }
   };
 
@@ -341,14 +438,22 @@ export default function ArticlesTab() {
   };
 
   const handleUnpublish = async (id) => {
-    const reason = window.prompt('Reason to unpublish (required):');
+    const reason = await dialog.prompt({
+      title: 'Unpublish article',
+      message: 'The article leaves the public site and the search index. The reason is kept in the audit trail.',
+      label: 'Reason',
+      inputType: 'textarea',
+      required: true,
+      confirmLabel: 'Unpublish',
+      tone: 'danger',
+    });
     if (!reason) return;
     setError('');
     try {
       await unpublishArticle(id, reason);
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to unpublish');
+      setError(describeError(err, 'Failed to unpublish'));
     }
   };
 
@@ -373,19 +478,33 @@ export default function ArticlesTab() {
   };
 
   const handleRequestRevision = async (id) => {
-    const reason = window.prompt('Revision reason (required):');
+    const reason = await dialog.prompt({
+      title: 'Request revision',
+      message: 'The writer sees this reason when the article comes back to them.',
+      label: 'What needs to change',
+      inputType: 'textarea',
+      required: true,
+      confirmLabel: 'Send back',
+    });
     if (!reason) return;
     setError('');
     try {
       await requestArticleRevision(id, reason);
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to request revision');
+      setError(describeError(err, 'Failed to request revision'));
     }
   };
 
   const handleSchedule = async (id) => {
-    const publishAt = window.prompt('Schedule publish time (YYYY-MM-DDTHH:mm):');
+    const publishAt = await dialog.prompt({
+      title: 'Schedule publish',
+      message: 'The article publishes automatically at this time. To publish right now, use Publish instead.',
+      label: 'Publish at (your local time)',
+      inputType: 'datetime-local',
+      required: true,
+      confirmLabel: 'Schedule',
+    });
     if (!publishAt) return;
     setError('');
     try {
@@ -397,14 +516,21 @@ export default function ArticlesTab() {
   };
 
   const handleArchive = async (id) => {
-    const reason = window.prompt('Archive reason (required):');
+    const reason = await dialog.prompt({
+      title: 'Archive article',
+      message: 'Archiving hides the article from the working list but keeps it in the database.',
+      label: 'Reason',
+      inputType: 'textarea',
+      required: true,
+      confirmLabel: 'Archive',
+    });
     if (!reason) return;
     setError('');
     try {
       await archiveArticle(id, reason);
       fetchArticles();
     } catch (err) {
-      setError(err.message || 'Failed to archive');
+      setError(describeError(err, 'Failed to archive'));
     }
   };
 
@@ -425,11 +551,14 @@ export default function ArticlesTab() {
     setError('');
     try {
       const res = await getArticleAudit(id);
-      const lines = (res.data?.audit || [])
+      const items = (res.data?.audit || [])
         .slice(0, 12)
-        .map((row) => `${row.action} → ${row.to_status || ''} (${row.actor_email || row.actor_id || 'system'})`)
-        .join('\n');
-      window.alert(lines || 'No audit events yet.');
+        .map((row) => `${row.action} → ${row.to_status || ''} (${row.actor_email || row.actor_id || 'system'})`);
+      await dialog.notice({
+        title: 'Audit trail',
+        message: items.length ? 'The twelve most recent events.' : 'No audit events yet.',
+        items,
+      });
     } catch (err) {
       setError(err.message || 'Failed to load audit');
     }
@@ -717,10 +846,19 @@ export default function ArticlesTab() {
                           >
                             <FaEdit className="w-4 h-4" />
                           </button>
+                          {art.status !== 'archived' && (
+                            <button
+                              onClick={() => handleArchive(art._id)}
+                              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 au-dash-text-subtle"
+                              title="Archive (keeps the record)"
+                            >
+                              <FaBoxArchive className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleDelete(art._id)}
+                            onClick={() => handleDelete(art)}
                             className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
-                            title="Delete"
+                            title="Delete permanently"
                           >
                             <FaTrash className="w-4 h-4" />
                           </button>
@@ -894,12 +1032,56 @@ export default function ArticlesTab() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium au-dash-text-muted mb-1">Hero Image URL</label>
+                    <label className="block text-sm font-medium au-dash-text-muted mb-1">Hero Image</label>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const row = approvedMedia.find((item) => item._id === e.target.value);
+                        if (!row) return;
+                        setFormData((p) => ({
+                          ...p,
+                          hero_image_url: normalizeMediaUrl(row.url),
+                          hero_image_alt: p.hero_image_alt || row.alt || '',
+                        }));
+                      }}
+                      className="au-dash-input mb-2"
+                    >
+                      <option value="">Pick approved media…</option>
+                      {approvedMedia.map((row) => (
+                        <option key={row._id} value={row._id}>
+                          {row.kind} — {row.alt || row.media_id}
+                        </option>
+                      ))}
+                    </select>
                     <input
                       type="url"
                       value={formData.hero_image_url}
                       onChange={(e) => setFormData((p) => ({ ...p, hero_image_url: e.target.value }))}
-                      placeholder="e.g. https://cdn.example.com/images/hero-car-trims.jpg"
+                      onBlur={(e) =>
+                        setFormData((p) => ({ ...p, hero_image_url: normalizeMediaUrl(e.target.value) }))
+                      }
+                      placeholder="Or paste Drive link / image URL"
+                      className="au-dash-input placeholder-slate-500"
+                    />
+                    {formData.hero_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={normalizeMediaUrl(formData.hero_image_url)}
+                        alt={formData.hero_image_alt || 'Hero preview'}
+                        className="mt-2 max-h-32 rounded object-contain bg-black/30"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium au-dash-text-muted mb-1">Hero Image Alt</label>
+                    <input
+                      type="text"
+                      value={formData.hero_image_alt}
+                      onChange={(e) => setFormData((p) => ({ ...p, hero_image_alt: e.target.value }))}
+                      placeholder="Describe the image for screen readers — required before publishing"
                       className="au-dash-input placeholder-slate-500"
                     />
                   </div>
@@ -961,7 +1143,26 @@ export default function ArticlesTab() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium au-dash-text-muted mb-1">OG Image URL</label>
+                    <label className="block text-sm font-medium au-dash-text-muted mb-1">OG Image</label>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const row = approvedMedia.find((item) => item._id === e.target.value);
+                        if (!row) return;
+                        setFormData((p) => ({
+                          ...p,
+                          seo: { ...p.seo, og_image_url: normalizeMediaUrl(row.url) },
+                        }));
+                      }}
+                      className="au-dash-input mb-2"
+                    >
+                      <option value="">Pick approved media…</option>
+                      {approvedMedia.map((row) => (
+                        <option key={row._id} value={row._id}>
+                          {row.kind} — {row.alt || row.media_id}
+                        </option>
+                      ))}
+                    </select>
                     <input
                       type="url"
                       value={formData.seo.og_image_url}
@@ -971,7 +1172,13 @@ export default function ArticlesTab() {
                           seo: { ...p.seo, og_image_url: e.target.value },
                         }))
                       }
-                      placeholder="e.g. https://cdn.example.com/og-car-trims.jpg"
+                      onBlur={(e) =>
+                        setFormData((p) => ({
+                          ...p,
+                          seo: { ...p.seo, og_image_url: normalizeMediaUrl(e.target.value) },
+                        }))
+                      }
+                      placeholder="Or paste Drive link / image URL"
                       className="au-dash-input placeholder-slate-500"
                     />
                   </div>
@@ -1029,9 +1236,64 @@ export default function ArticlesTab() {
                 <ArticleEditor
                   value={formData.sections}
                   onChange={(sections) => setFormData((p) => ({ ...p, sections }))}
-                  onMetaDetected={applyPastedMeta}
+                  onPackageDetected={applyPastedPackage}
                 />
               </div>
+
+              {/* Filled by the paste, not typed. Shown so the editor can see what was
+                  captured and clear it if a package was pasted by mistake. */}
+              {(formData.decide_first || formData.sources.length > 0) && (
+                <div className="space-y-2">
+                  <h4 className="text-md font-semibold au-dash-text-strong">Modules from the package</h4>
+                  {formData.decide_first && (
+                    <div className="au-dash-card p-3 text-sm space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium au-dash-text-strong">Decide First</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormData((p) => ({ ...p, decide_first: null }))}
+                          className="text-xs au-dash-text-subtle hover:au-dash-text-strong"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {[
+                        ['What matters', formData.decide_first.what_matters],
+                        ['Watch this', formData.decide_first.watch_this],
+                        ['Your next move', formData.decide_first.your_next_move],
+                      ].map(([label, lines]) => (
+                        <p key={label} className="au-dash-text-muted">
+                          <span className="au-dash-text-subtle">{label}:</span> {(lines || []).join(' ') || '—'}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {formData.sources.length > 0 && (
+                    <div className="au-dash-card p-3 text-sm space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium au-dash-text-strong">
+                          Sources ({formData.sources.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setFormData((p) => ({ ...p, sources: [] }))}
+                          className="text-xs au-dash-text-subtle hover:au-dash-text-strong"
+                        >
+                          Remove all
+                        </button>
+                      </div>
+                      <ul className="space-y-0.5 au-dash-text-muted">
+                        {formData.sources.map((source) => (
+                          <li key={source.url}>
+                            {source.source_name ? `${source.source_name} — ` : ''}
+                            {source.label || source.url}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Related Articles */}
               <div className="space-y-2">
@@ -1077,6 +1339,8 @@ export default function ArticlesTab() {
           </div>
         </div>
       )}
+
+      {dialog.node}
     </div>
   );
 }

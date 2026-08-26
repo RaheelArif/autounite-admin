@@ -13,6 +13,7 @@ const EDITABLE_TYPES = new Set([
   'heading',
   'bullets',
   'numbered_list',
+  'quote',
   'callout',
   'table',
   'image',
@@ -58,6 +59,7 @@ function blockToHtml(block) {
   if (type === 'heading') return `<h3>${esc(block.text)}</h3>`;
   if (type === 'bullets') return `<ul>${blockItems(block).map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`;
   if (type === 'numbered_list') return `<ol>${blockItems(block).map((i) => `<li>${esc(i)}</li>`).join('')}</ol>`;
+  if (type === 'quote') return `<blockquote><p>${runsToHtml(block)}</p></blockquote>`;
   if (type === 'callout') {
     const title = block.title ? `<strong>${esc(block.title)}</strong> ` : '';
     return `<blockquote><p>${title}${runsToHtml(block)}</p></blockquote>`;
@@ -89,20 +91,68 @@ export function sectionsToHtml(sections = []) {
 }
 
 /**
- * Newsletter packages carry platform-only copy (launch post, first comment) above
- * a marker the writers already use. Everything above it belongs to LinkedIn, not
- * the blog, so the paste starts where the article starts.
+ * Landmarks the writers put in the package to separate public copy from the
+ * admin-only tables. Matched on normalized text — upper-cased with punctuation
+ * collapsed — so a changed dash, casing or trailing note never breaks the split.
  */
-const ARTICLE_COPY_MARKER = /ARTICLE\s+COPY\s*[—–-]?\s*PASTE\s+FROM\s+HERE/i;
+const MARKERS = {
+  // "ARTICLE COPY — PASTE FROM HERE" is the older newsletter wording.
+  bodyStart: ['ARTICLE BODY', 'ARTICLE COPY PASTE FROM HERE'],
+  decideFirst: ['DECIDE FIRST'],
+  sources: ['ADMIN SOURCE RECORDS'],
+  // Everything from the first of these onwards is importer/QA instruction, never article copy.
+  adminOnly: ['ADMIN SOURCE RECORDS', 'BENCHMARK IMPORT', 'RENDERER EXPECTATIONS', 'REQUIRED LIVE PROOF'],
+};
 
-export function trimToArticleCopy(html) {
-  if (typeof window === 'undefined' || !html) return html;
-  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
-  const children = [...doc.body.children];
-  const markerIndex = children.findIndex((node) => ARTICLE_COPY_MARKER.test(node.textContent || ''));
-  if (markerIndex < 0) return html;
-  children.slice(0, markerIndex + 1).forEach((node) => node.remove());
-  return doc.body.innerHTML;
+/** Body copy can quote a marker phrase; a real marker is a short standalone line. */
+const MARKER_MAX_LENGTH = 90;
+
+const normalizeMarker = (value) =>
+  String(value || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .trim();
+
+function markerIndex(nodes, phrases, from = 0) {
+  for (let index = Math.max(from, 0); index < nodes.length; index += 1) {
+    const text = normalizeMarker(nodes[index].textContent);
+    if (!text || text.length > MARKER_MAX_LENGTH) continue;
+    if (phrases.some((phrase) => text.startsWith(phrase))) return index;
+  }
+  return -1;
+}
+
+/** First table in a node range, with the top-level node that carries it. */
+function findTable(nodes, from, to) {
+  const end = to < 0 ? nodes.length : to;
+  for (let index = Math.max(from, 0); index < end; index += 1) {
+    const node = nodes[index];
+    const table = node.tagName?.toLowerCase() === 'table' ? node : node.querySelector?.('table');
+    if (table) return { table, node, index };
+  }
+  return null;
+}
+
+const tableRows = (table) =>
+  [...table.querySelectorAll('tr')].map((row) => [...row.children].map((cell) => cell.textContent.trim()));
+
+/**
+ * The package ships with lineage that is not confirmed yet. Those placeholders are
+ * the absence of a value, not a value — storing them would publish "Pending
+ * verification" as if it were a date or a URL.
+ */
+const UNRESOLVED = /^(pending(\s+verification)?|not\s+published|tbd|n\/?a|none|unknown|[-—–])$/i;
+
+const resolved = (value) => {
+  const text = String(value ?? '').trim();
+  return text && !UNRESOLVED.test(text) ? text : '';
+};
+
+function isoDate(value) {
+  const text = resolved(value);
+  if (!text) return '';
+  const time = Date.parse(text);
+  return Number.isFinite(time) ? new Date(time).toISOString() : '';
 }
 
 /**
@@ -124,7 +174,25 @@ const META_ROWS = {
   'meta description': 'metaDescription',
   'hero alt': 'heroAlt',
   'alt text': 'heroAlt',
+  'hero file': 'heroFile',
+  'content type': 'contentType',
+  author: 'authorName',
+  'canonical url': 'canonicalUrl',
+  'social image file': 'socialImageFile',
+  'social image alt': 'socialImageAlt',
+  'tool handoff': 'toolHandoff',
+  'original platform': 'originalPlatform',
+  'original url': 'originalUrl',
+  'original publish date': 'originalPublishedAt',
+  'last verified': 'lastVerifiedAt',
+  'autounite publish date': 'autoUnitePublishedAt',
+  'linkedin url': 'linkedin',
+  'medium url': 'medium',
+  'substack url': 'substack',
 };
+
+const DATE_FIELDS = new Set(['originalPublishedAt', 'lastVerifiedAt', 'autoUnitePublishedAt']);
+const DISTRIBUTION_FIELDS = new Set(['linkedin', 'medium', 'substack']);
 
 /** Writers separate tags with bullets, commas or pipes. */
 const splitTags = (value) =>
@@ -133,46 +201,105 @@ const splitTags = (value) =>
     .map((tag) => tag.trim())
     .filter(Boolean);
 
-export function metaFromPastedHtml(html) {
-  if (typeof window === 'undefined' || !html) return {};
-  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
-  const table = doc.body.querySelector('table');
-  if (!table) return {};
-
+function metaFromTable(table) {
   const meta = {};
-  for (const row of table.querySelectorAll('tr')) {
-    const [label, value] = [...row.children].map((cell) => cell.textContent.trim());
+  const distribution = {};
+  for (const [label, value] of tableRows(table)) {
     const field = META_ROWS[String(label || '').toLowerCase()];
-    if (!field || !value) continue;
+    if (!field) continue;
+    const text = resolved(value);
+    if (!text) continue;
     if (field === 'readTimeMin') {
-      const minutes = Number(/(\d+)/.exec(value)?.[1]);
+      const minutes = Number(/(\d+)/.exec(text)?.[1]);
       if (minutes) meta.readTimeMin = minutes;
       continue;
     }
     if (field === 'slug') {
       // Written as a path in the package; the form stores the last segment only.
-      meta.slug = value.replace(/^.*\/blog\//, '').replace(/^\/+|\/+$/g, '');
+      meta.slug = text.replace(/^.*\/blog\//, '').replace(/^\/+|\/+$/g, '');
       continue;
     }
     if (field === 'tags') {
-      meta.tags = splitTags(value);
+      meta.tags = splitTags(text);
       continue;
     }
-    meta[field] = value;
+    if (DISTRIBUTION_FIELDS.has(field)) {
+      distribution[field] = text;
+      continue;
+    }
+    if (DATE_FIELDS.has(field)) {
+      const iso = isoDate(text);
+      if (iso) meta[field] = iso;
+      continue;
+    }
+    meta[field] = text;
   }
-
-  // The public title is the last real line above the table; the file name above it
-  // is written in caps and is not part of the article.
-  const before = [];
-  for (const node of [...doc.body.children]) {
-    if (node === table || node.contains(table)) break;
-    const text = node.textContent.trim();
-    if (text) before.push(text);
-  }
-  const title = [...before].reverse().find((text) => text !== text.toUpperCase());
-  if (title && !meta.title) meta.title = title;
-
+  if (Object.keys(distribution).length) meta.distribution = distribution;
   return meta;
+}
+
+/** How many recognised rows make a table the package header rather than article data. */
+const META_TABLE_MIN_ROWS = 2;
+
+/**
+ * Older packages put the title on the line above the table instead of in an H1
+ * row. The file name sits above that and is written in caps, so the last
+ * mixed-case line is the title.
+ */
+function titleAbove(nodes, tableIndex) {
+  const lines = nodes
+    .slice(0, tableIndex)
+    .map((node) => node.textContent.trim())
+    .filter(Boolean);
+  return [...lines].reverse().find((text) => text !== text.toUpperCase()) || '';
+}
+
+const DECIDE_ROWS = {
+  'what matters': 'whatMatters',
+  'watch this': 'watchThis',
+  'your next move': 'yourNextMove',
+};
+
+function decideFirstFromTable(table) {
+  const decideFirst = {};
+  for (const [label, value] of tableRows(table)) {
+    const field = DECIDE_ROWS[String(label || '').toLowerCase()];
+    const text = resolved(value);
+    if (field && text) decideFirst[field] = [text];
+  }
+  return Object.keys(decideFirst).length ? decideFirst : null;
+}
+
+const SOURCE_COLUMNS = {
+  publisher: 'sourceName',
+  source: 'sourceName',
+  'source name': 'sourceName',
+  label: 'label',
+  title: 'label',
+  url: 'url',
+  'full url': 'url',
+  link: 'url',
+  verified: 'verifiedAt',
+  'verified date': 'verifiedAt',
+  'verified at': 'verifiedAt',
+};
+
+function sourcesFromTable(table) {
+  const [header, ...rows] = tableRows(table);
+  if (!header) return [];
+  const fields = header.map((column) => SOURCE_COLUMNS[String(column || '').toLowerCase()] || '');
+  if (!fields.includes('url')) return [];
+  return rows
+    .map((cells) => {
+      const source = {};
+      fields.forEach((field, index) => {
+        const text = resolved(cells[index]);
+        if (!field || !text) return;
+        source[field] = field === 'verifiedAt' ? isoDate(text) : text;
+      });
+      return source;
+    })
+    .filter((source) => source.url);
 }
 
 function entirelyBold(element) {
@@ -209,7 +336,7 @@ function looksLikeHeading(text) {
   return !/[.,;]$/.test(text);
 }
 
-function promoteBoldHeadings(html) {
+export function promoteBoldHeadings(html) {
   if (typeof window === 'undefined' || !html) return html;
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
   if (doc.body.querySelector('h1, h2')) return html;
@@ -224,9 +351,61 @@ function promoteBoldHeadings(html) {
   return doc.body.innerHTML;
 }
 
-/** What the editor runs on every paste. */
-export function transformPastedHtml(html) {
-  return promoteBoldHeadings(trimToArticleCopy(html));
+/**
+ * Splits a pasted package into the four things it actually carries: the public
+ * body, the header metadata, the Decide First module and the source records.
+ *
+ * The markers decide the boundaries — the body ends at "Admin source records"
+ * because everything from there on is importer and QA instruction. A plain paste
+ * with no markers keeps working: it is all body, and the header table is only
+ * lifted out when it really reads like one.
+ */
+export function parsePastedPackage(html) {
+  const empty = { html: html || '', meta: {}, decideFirst: null, sources: [] };
+  if (typeof window === 'undefined' || !html) return empty;
+
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+  const nodes = [...doc.body.children];
+  if (!nodes.length) return empty;
+
+  const bodyAt = markerIndex(nodes, MARKERS.bodyStart);
+  const decideAt = markerIndex(nodes, MARKERS.decideFirst);
+  const sourcesAt = markerIndex(nodes, MARKERS.sources);
+  const adminAt = markerIndex(nodes, MARKERS.adminOnly, Math.max(bodyAt, 0));
+
+  const beforeBody = [decideAt, bodyAt, adminAt].filter((index) => index >= 0).sort((a, b) => a - b)[0] ?? -1;
+  const metaHit = findTable(nodes, 0, beforeBody);
+  const meta = metaHit ? metaFromTable(metaHit.table) : {};
+  const metaIsHeader = Object.keys(meta).length >= META_TABLE_MIN_ROWS;
+  if (metaIsHeader && !meta.title) {
+    const title = titleAbove(nodes, metaHit.index);
+    if (title) meta.title = title;
+  }
+
+  const decideHit = decideAt >= 0 ? findTable(nodes, decideAt + 1, bodyAt >= 0 ? bodyAt : -1) : null;
+  const decideFirst = decideHit ? decideFirstFromTable(decideHit.table) : null;
+
+  const sourcesHit = sourcesAt >= 0 ? findTable(nodes, sourcesAt + 1, -1) : null;
+  const sources = sourcesHit ? sourcesFromTable(sourcesHit.table) : [];
+
+  const consumed = new Set();
+  if (metaIsHeader && metaHit) consumed.add(metaHit.node);
+  if (decideFirst && decideHit) consumed.add(decideHit.node);
+
+  const lastLifted = Math.max(
+    metaIsHeader && metaHit ? metaHit.index : -1,
+    decideFirst && decideHit ? decideHit.index : -1,
+  );
+  const start = bodyAt >= 0 ? bodyAt + 1 : lastLifted + 1;
+  const end = adminAt >= 0 ? adminAt : nodes.length;
+
+  const body = nodes
+    .slice(start, end)
+    .filter((node) => !consumed.has(node))
+    .map((node) => node.outerHTML)
+    .join('');
+
+  return { html: promoteBoldHeadings(body), meta, decideFirst, sources };
 }
 
 /** Blocks the editor cannot express, kept aside so editing never drops them. */
@@ -352,8 +531,10 @@ export function htmlToSections(html, preserved = new Map()) {
     }
     if (tag === 'blockquote') {
       if (!text) continue;
+      // Word's Quote style arrives as a blockquote and is a pull quote, not a
+      // callout: a callout is an editor-authored aside and carries its own title.
       const runs = runsFromElement(node);
-      pushBlock({ kind: 'callout', type: 'callout', tone: 'note', text, ...(runs.length ? { text_runs: runs } : {}) });
+      pushBlock({ kind: 'quote', type: 'quote', text, ...(runs.length ? { text_runs: runs } : {}) });
       continue;
     }
     if (tag === 'table') {

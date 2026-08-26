@@ -128,11 +128,36 @@ export default function CategoriesTab() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Soft delete this category? (isActive = false)')) return;
+  const handleDeactivate = async (category) => {
+    const confirmed = await dialog.confirm({
+      title: 'Deactivate category',
+      message: `“${category.name}” stops appearing in pickers but stays in the database and keeps its articles.`,
+      confirmLabel: 'Deactivate',
+    });
+    if (!confirmed) return;
     setError('');
     try {
-      await deleteCategory(id);
+      await deleteCategory(category._id);
+      fetchCategories();
+    } catch (err) {
+      setError(err.message || 'Failed to deactivate');
+    }
+  };
+
+  const handleDelete = async (category) => {
+    const confirmed = await dialog.confirm({
+      title: 'Delete permanently',
+      message: `“${category.name}” will be removed from the database. This cannot be undone, and it is refused while any article still uses the category.`,
+      label: `Type the slug to confirm: ${category.slug}`,
+      placeholder: category.slug,
+      confirmText: category.slug,
+      confirmLabel: 'Delete forever',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+    setError('');
+    try {
+      await purgeCategory(category._id);
       fetchCategories();
     } catch (err) {
       setError(err.message || 'Failed to delete');

@@ -1,18 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import ImageExtension from '@tiptap/extension-image';
 import { TableKit } from '@tiptap/extension-table';
 import { getBlogMedia } from '@/lib/blog';
-import {
-  htmlToSections,
-  metaFromPastedHtml,
-  preservedBlocks,
-  sectionsToHtml,
-  transformPastedHtml,
-} from '@/lib/blogEditorDoc';
+import { htmlToSections, parsePastedPackage, preservedBlocks, sectionsToHtml } from '@/lib/blogEditorDoc';
 
 /** Same rule the publish gate applies, so a bad link is caught while typing. */
 function validHref(href) {
@@ -41,12 +35,22 @@ function ToolbarButton({ onClick, active, disabled, title, children }) {
  * Article body editor. Paste from Word/Docs/ChatGPT keeps its structure, and the
  * source links the copy needs are placed inline on the exact phrase.
  */
-export default function ArticleEditor({ value, onChange, onMetaDetected }) {
+export default function ArticleEditor({ value, onChange, onPackageDetected }) {
   const [initial] = useState(() => ({
     html: sectionsToHtml(value),
     preserved: preservedBlocks(value),
   }));
   const [media, setMedia] = useState([]);
+  const [imported, setImported] = useState(null);
+  // handlePaste and transformPastedHTML both see the same clipboard HTML; parse it once.
+  const lastPaste = useRef({ html: '', parsed: null });
+
+  const parsePaste = useCallback((html) => {
+    if (lastPaste.current.html !== html) {
+      lastPaste.current = { html, parsed: parsePastedPackage(html) };
+    }
+    return lastPaste.current.parsed;
+  }, []);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -66,11 +70,14 @@ export default function ArticleEditor({ value, onChange, onMetaDetected }) {
     content: initial.html,
     editorProps: {
       attributes: { class: 'au-editor__content' },
-      transformPastedHTML: transformPastedHtml,
-      // Read the package's execution table before the paste is trimmed away.
+      transformPastedHTML: (html) => parsePaste(html).html,
+      // Read the package's admin tables before the paste is trimmed down to body copy.
       handlePaste: (view, event) => {
         const html = event.clipboardData?.getData('text/html');
-        if (html && onMetaDetected) onMetaDetected(metaFromPastedHtml(html));
+        if (!html) return false;
+        const parsed = parsePaste(html);
+        setImported(parsed);
+        if (onPackageDetected) onPackageDetected(parsed);
         return false;
       },
     },
@@ -185,7 +192,7 @@ export default function ArticleEditor({ value, onChange, onMetaDetected }) {
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           active={editor.isActive('blockquote')}
-          title="Callout"
+          title="Pull quote"
         >
           Quote
         </ToolbarButton>
@@ -241,14 +248,36 @@ export default function ArticleEditor({ value, onChange, onMetaDetected }) {
       <EditorContent editor={editor} />
 
       <p className="text-xs au-dash-text-subtle mt-2">
-        Paste straight from Word, Google Docs or ChatGPT — headings, lists and tables carry over, and each H2 becomes a
-        section. In a newsletter package, everything above “Article copy — paste from here” is dropped and the deck,
-        read time and SEO fields above are filled from its table. Detected: {summary.sections} sections, {summary.links}{' '}
-        inline links.
+        Paste the whole article package from Word, Google Docs or ChatGPT — headings, lists, quotes, tables and links
+        carry over, and each H2 becomes a section. The header table fills the fields above, “Decide First” and “Admin
+        source records” are lifted into their own modules, and everything from the admin tables onwards is left out of
+        the public copy. Detected: {summary.sections} sections, {summary.links} inline links.
         {initial.preserved.size > 0
           ? ` ${initial.preserved.size} module block group(s) (sources, related, Decide First) are preserved and edited outside this box.`
           : ''}
       </p>
+
+      {imported && (
+        <div className="text-xs au-dash-text-subtle mt-2 space-y-0.5">
+          <span className="block au-dash-text-muted">From the pasted package:</span>
+          <div>Header fields: {Object.keys(imported.meta).length || 'none'}</div>
+          <div>Decide First: {imported.decideFirst ? 'captured' : 'not found'}</div>
+          <div>Source records: {imported.sources.length}</div>
+          {imported.meta.distribution && (
+            <div>
+              Distribution links found ({Object.keys(imported.meta.distribution).join(', ')}) — add them in the
+              Distribution tab once the article is published.
+            </div>
+          )}
+          {(imported.meta.heroFile || imported.meta.socialImageFile) && (
+            <div>
+              Image files named in the package ({[imported.meta.heroFile, imported.meta.socialImageFile]
+                .filter(Boolean)
+                .join(', ')}) — upload them in the Media tab and pick the approved URL above.
+            </div>
+          )}
+        </div>
+      )}
 
       {summary.labels.length > 0 && (
         <div className="text-xs au-dash-text-subtle mt-2">
