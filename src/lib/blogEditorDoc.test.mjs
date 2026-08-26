@@ -99,6 +99,24 @@ for (const line of ['19.42% APR', 'Sometimes those four hours are ugly', 'Negati
   assert.ok(out.includes(`<h2>${line}</h2>`), `a real heading is still promoted: ${line}`);
 }
 
+// Client Quote style pastes as italic (often also bold) — that is a pull quote, not a section.
+const wordQuote = htmlToSections('<h2>Rates</h2><p><b><i>How in the world is that a good approval?</i></b></p><p>That reaction makes sense.</p>');
+assert.equal(wordQuote[0].blocks[0].kind, 'quote', 'italic paragraph becomes a quote block');
+assert.equal(wordQuote[0].blocks[0].text_runs[0].italic, true);
+assert.equal(wordQuote[0].blocks[1].kind, 'paragraph');
+
+// Bold and italic inside a paragraph are kept on the exact words.
+const emphasized = htmlToSections('<h2>Credit</h2><p>A <strong>high APR</strong> can still be a <em>strong</em> approval.</p>');
+const emphRuns = emphasized[0].blocks[0].text_runs;
+assert.ok(emphRuns.some((run) => run.text === 'high APR' && run.bold), 'bold phrase kept');
+assert.ok(emphRuns.some((run) => run.text === 'strong' && run.italic), 'italic phrase kept');
+
+// Client list items are bold in Word — preserve that emphasis.
+const boldList = htmlToSections('<h2>Lender</h2><ul><li><b>Your income.</b></li><li><b>The term.</b></li></ul>');
+assert.equal(boldList[0].blocks[0].kind, 'bullets');
+assert.deepEqual(boldList[0].blocks[0].items, ['Your income.', 'The term.']);
+assert.equal(boldList[0].blocks[0].item_runs[0][0].bold, true, 'list bold preserved');
+
 // A newsletter package: file name, public title, execution table, LinkedIn-only
 // copy, then the marker where the article actually starts.
 const packagePaste = `

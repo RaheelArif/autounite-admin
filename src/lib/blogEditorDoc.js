@@ -47,9 +47,13 @@ function runsToHtml(block) {
   const runs = block?.text_runs || block?.textRuns;
   if (!Array.isArray(runs) || !runs.length) return esc(block?.text || block?.body || '');
   return runs
-    .map((run) =>
-      run?.href ? `<a href="${esc(run.href)}">${esc(run.text)}</a>` : esc(run?.text ?? ''),
-    )
+    .map((run) => {
+      let html = esc(run?.text ?? '');
+      if (run?.italic) html = `<em>${html}</em>`;
+      if (run?.bold) html = `<strong>${html}</strong>`;
+      if (run?.href) html = `<a href="${esc(run.href)}">${html}</a>`;
+      return html;
+    })
     .join('');
 }
 
@@ -57,8 +61,21 @@ function blockToHtml(block) {
   const type = blockType(block);
   if (type === 'paragraph' || type === 'text') return `<p>${runsToHtml(block)}</p>`;
   if (type === 'heading') return `<h3>${esc(block.text)}</h3>`;
-  if (type === 'bullets') return `<ul>${blockItems(block).map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`;
-  if (type === 'numbered_list') return `<ol>${blockItems(block).map((i) => `<li>${esc(i)}</li>`).join('')}</ol>`;
+  if (type === 'bullets' || type === 'numbered_list') {
+    const tag = type === 'bullets' ? 'ul' : 'ol';
+    const items = blockItems(block);
+    const itemRuns = block?.item_runs || block?.itemRuns || [];
+    const lis = items
+      .map((item, index) => {
+        const runs = itemRuns[index];
+        if (Array.isArray(runs) && runs.length) {
+          return `<li>${runsToHtml({ text_runs: runs })}</li>`;
+        }
+        return `<li>${esc(item)}</li>`;
+      })
+      .join('');
+    return `<${tag}>${lis}</${tag}>`;
+  }
   if (type === 'quote') return `<blockquote><p>${runsToHtml(block)}</p></blockquote>`;
   if (type === 'callout') {
     const title = block.title ? `<strong>${esc(block.title)}</strong> ` : '';
@@ -343,6 +360,8 @@ export function promoteBoldHeadings(html) {
 
   for (const paragraph of [...doc.body.querySelectorAll('p')]) {
     const text = paragraph.textContent.trim();
+    // Word Quote style pastes as italic — never promote those into section headings.
+    if (isQuoteParagraph(paragraph)) continue;
     if (!looksLikeHeading(text) || !entirelyBold(paragraph)) continue;
     const heading = doc.createElement('h2');
     heading.textContent = text;
@@ -421,7 +440,12 @@ export function preservedBlocks(sections = []) {
 function mergeRuns(runs) {
   return runs.reduce((acc, run) => {
     const last = acc[acc.length - 1];
-    if (last && (last.href || '') === (run.href || '')) {
+    const same =
+      last &&
+      (last.href || '') === (run.href || '') &&
+      Boolean(last.bold) === Boolean(run.bold) &&
+      Boolean(last.italic) === Boolean(run.italic);
+    if (same) {
       last.text += run.text;
       return acc;
     }
@@ -430,19 +454,42 @@ function mergeRuns(runs) {
   }, []);
 }
 
-/** Text of an element split into runs, so a linked phrase keeps its href. */
+function markFromAncestors(node, stopAt) {
+  let bold = false;
+  let italic = false;
+  for (let parent = node.parentElement; parent && parent !== stopAt; parent = parent.parentElement) {
+    const tag = parent.tagName.toLowerCase();
+    const weight = parent.style?.fontWeight || '';
+    const style = parent.style?.fontStyle || '';
+    if (tag === 'b' || tag === 'strong' || weight === 'bold' || Number(weight) >= 600) bold = true;
+    if (tag === 'i' || tag === 'em' || style === 'italic') italic = true;
+  }
+  return { bold, italic };
+}
+
+/**
+ * Text of an element split into runs so links, bold and italic stay attached to
+ * the exact phrases the writer marked — matching the client Word package.
+ */
 function runsFromElement(element) {
   const runs = [];
   const walk = (node, href) => {
     node.childNodes.forEach((child) => {
       if (child.nodeType === 3) {
-        if (child.nodeValue) runs.push({ text: child.nodeValue, href });
+        if (!child.nodeValue) return;
+        const { bold, italic } = markFromAncestors(child, element.parentElement);
+        runs.push({
+          text: child.nodeValue,
+          href: href || undefined,
+          ...(bold ? { bold: true } : {}),
+          ...(italic ? { italic: true } : {}),
+        });
         return;
       }
       if (child.nodeType !== 1) return;
       const tag = child.tagName.toLowerCase();
       if (tag === 'br') {
-        runs.push({ text: ' ', href: '' });
+        runs.push({ text: ' ' });
         return;
       }
       walk(child, tag === 'a' ? child.getAttribute('href') || '' : href);
@@ -450,8 +497,24 @@ function runsFromElement(element) {
   };
   walk(element, '');
   const merged = mergeRuns(runs.filter((run) => run.text));
-  // Plain copy stays plain — runs are only worth storing when a link is present.
-  return merged.some((run) => run.href) ? merged.map((run) => (run.href ? run : { text: run.text })) : [];
+  // Runs are only stored when they add a link or emphasis the plain text field cannot.
+  const useful = merged.some((run) => run.href || run.bold || run.italic);
+  if (!useful) return [];
+  return merged.map((run) => {
+    const out = { text: run.text };
+    if (run.href) out.href = run.href;
+    if (run.bold) out.bold = true;
+    if (run.italic) out.italic = true;
+    return out;
+  });
+}
+
+/** Word's Quote style often pastes as a fully italic (sometimes also bold) paragraph. */
+function isQuoteParagraph(element) {
+  const runs = runsFromElement(element);
+  if (!runs.length) return false;
+  const visible = runs.filter((run) => run.text.trim());
+  return visible.length > 0 && visible.every((run) => run.italic);
 }
 
 function tableFromElement(element) {
@@ -519,14 +582,28 @@ export function htmlToSections(html, preserved = new Map()) {
       }
       if (!text) continue;
       const runs = runsFromElement(node);
+      // Client Quote style often arrives as <p><b><i>…</i></b></p>, not <blockquote>.
+      if (isQuoteParagraph(node)) {
+        pushBlock({ kind: 'quote', type: 'quote', text, ...(runs.length ? { text_runs: runs } : {}) });
+        continue;
+      }
       pushBlock({ kind: 'paragraph', type: 'paragraph', text, ...(runs.length ? { text_runs: runs } : {}) });
       continue;
     }
     if (tag === 'ul' || tag === 'ol') {
-      const items = [...node.querySelectorAll(':scope > li')].map((li) => li.textContent.trim()).filter(Boolean);
+      const lis = [...node.querySelectorAll(':scope > li')];
+      const items = lis.map((li) => li.textContent.trim()).filter(Boolean);
       if (!items.length) continue;
       const kind = tag === 'ul' ? 'bullets' : 'numbered_list';
-      pushBlock({ kind, type: kind, items, bullets: items });
+      const itemRuns = lis.map((li) => runsFromElement(li));
+      const hasMarks = itemRuns.some((runs) => runs.length);
+      pushBlock({
+        kind,
+        type: kind,
+        items,
+        bullets: items,
+        ...(hasMarks ? { item_runs: itemRuns } : {}),
+      });
       continue;
     }
     if (tag === 'blockquote') {

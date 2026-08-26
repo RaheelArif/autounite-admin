@@ -19,7 +19,9 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  purgeCategory,
 } from '@/lib/blog';
+import { useDialog } from '@/components/Dialog';
 
 function slugFromName(name) {
   if (!name) return '';
@@ -30,6 +32,7 @@ function slugFromName(name) {
 }
 
 export default function CategoriesTab() {
+  const dialog = useDialog();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -273,7 +276,7 @@ export default function CategoriesTab() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           <button
                             onClick={() => openEditModal(cat)}
                             className="p-2 rounded-lg bg-white/15 hover:bg-white/22 au-dash-text-strong"
@@ -282,15 +285,30 @@ export default function CategoriesTab() {
                             <FaEdit className="w-4 h-4" />
                           </button>
                           {cat.locked ? (
-                            <span className="px-2 py-1 text-xs au-dash-text-subtle">Locked</span>
+                            <span className="px-2 py-1 text-xs au-dash-text-subtle" title="BuildX locked category">
+                              Locked
+                            </span>
                           ) : (
-                          <button
-                            onClick={() => handleDelete(cat._id)}
-                            className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
-                            title="Delete (soft)"
-                          >
-                            <FaTrash className="w-4 h-4" />
-                          </button>
+                            <>
+                              {cat.isActive ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeactivate(cat)}
+                                  className="p-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300"
+                                  title="Deactivate"
+                                >
+                                  <FaTimesCircle className="w-4 h-4" />
+                                </button>
+                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(cat)}
+                                className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                title="Delete permanently"
+                              >
+                                <FaTrash className="w-4 h-4" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -406,6 +424,7 @@ export default function CategoriesTab() {
           </div>
         </div>
       )}
+      {dialog.node}
     </div>
   );
 }
