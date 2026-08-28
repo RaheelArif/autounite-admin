@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaCheck, FaCopy, FaEdit, FaEye, FaPlus, FaTimes, FaTrash, FaWrench } from 'react-icons/fa';
 import { approveBlogMedia, createBlogMedia, deleteBlogMedia, getBlogMedia, updateBlogMedia } from '@/lib/blog';
 import { isBrokenDriveEmbedUrl, normalizeMediaUrl } from '@/lib/blogMediaUrl';
+import { useDialog } from '@/components/Dialog';
 
 const EMPTY_FORM = { url: '', alt: '', kind: 'hero' };
 
 export default function MediaTab() {
+  const dialog = useDialog();
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -119,6 +121,23 @@ export default function MediaTab() {
       window.setTimeout(() => setCopiedId((current) => (current === row._id ? '' : current)), 1500);
     } catch {
       setError('Could not copy URL — select it and copy manually');
+    }
+  };
+
+  const handleDelete = async (row) => {
+    const ok = await dialog.confirm({
+      title: 'Delete Media',
+      message: `Are you sure you want to delete this ${row.kind || 'image'} (${row.media_id || row.alt || 'media'})?`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
+    setError('');
+    try {
+      await deleteBlogMedia(row._id);
+      await load();
+    } catch (err) {
+      setError(err.message || 'Failed to delete media');
     }
   };
 
@@ -312,11 +331,8 @@ export default function MediaTab() {
                         </button>
                       )}
                       <button
-                        onClick={async () => {
-                          await deleteBlogMedia(row._id);
-                          load();
-                        }}
-                        className="p-2 rounded-lg bg-red-500/20 text-red-400"
+                        onClick={() => handleDelete(row)}
+                        className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
                         title="Delete media"
                       >
                         <FaTrash className="w-4 h-4" />
@@ -332,12 +348,12 @@ export default function MediaTab() {
 
       {preview && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6 overflow-y-auto"
           onClick={() => setPreview(null)}
           role="presentation"
         >
           <div
-            className="au-dash-card max-w-3xl w-full p-4 space-y-3"
+            className="au-dash-card max-w-3xl w-full p-5 space-y-4 border border-white/20 bg-[#080c18] shadow-2xl rounded-2xl my-auto"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -376,6 +392,8 @@ export default function MediaTab() {
           </div>
         </div>
       )}
+
+      {dialog.node}
     </div>
   );
 }

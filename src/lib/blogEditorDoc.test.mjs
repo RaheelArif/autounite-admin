@@ -257,4 +257,44 @@ assert.ok(
   'each link keeps its anchor text',
 );
 
+// ---------------------------------------------------------------------------
+// Test Package 02 (Newsletter 06 — 90,000 Miles transmission story)
+// ---------------------------------------------------------------------------
+const test02Html = readFileSync(fileURLToPath(new URL('./__fixtures__/blog-article-test02.html', import.meta.url)), 'utf8');
+const pkg02 = parsePastedPackage(test02Html);
+assert.equal(pkg02.meta.title, '90,000 Miles. Eight Months Later, It Needed a Transmission.');
+assert.match(pkg02.meta.summary, /^The customer got the out-the-door number he wanted/);
+assert.deepEqual(Object.keys(pkg02.decideFirst), ['whatMatters', 'watchThis', 'yourNextMove']);
+assert.match(pkg02.decideFirst.whatMatters[0], /^A low out-the-door number does not remove the ownership risk/);
+assert.equal(pkg02.sources.length, 7, 'all 7 sources extracted from Sources & Methodology');
+
+const sections02 = htmlToSections(pkg02.html);
+assert.equal(sections02.length, 7, '7 decision-level sections for On This Page');
+assert.equal(sections02[0].label, 'Overview');
+assert.equal(sections02[1].label, 'The Customer’s Question');
+assert.equal(sections02[2].label, 'Paperwork, Coverage & Inspection');
+assert.equal(sections02[3].label, 'What the Technical Guidance Can Prove');
+assert.equal(sections02[4].label, 'Purchase Price vs. Ownership Risk');
+assert.equal(sections02[5].label, 'Responsibility, Mileage & Goodwill');
+assert.equal(sections02[6].label, 'What to Decide Before Delivery');
+
+// ---------------------------------------------------------------------------
+// macOS / Word Style Tags Sanitization Test
+// ---------------------------------------------------------------------------
+const wordClipboardWithStyles = `
+<style type="text/css">
+p.p1 {margin: 0.0px 0.0px 0.0px; font: 12.0px Times}
+p.p2 {margin: 0.0px 0.0px 0.0px; font: 9.0px Times; color: #704aff}
+span.s1 {text-decoration: underline}
+</style>
+<p class="p1"><b>90,000 Miles. Eight Months Later, It Needed a Transmission.</b></p>
+<p class="p2">The customer got the out-the-door number he wanted. The repair risk was a separate decision.</p>
+<h2>Overview</h2>
+<p class="p1">The customer got the out-the-door number he wanted.</p>
+`;
+const pkgWithStyles = parsePastedPackage(wordClipboardWithStyles);
+assert.equal(pkgWithStyles.meta.title, '90,000 Miles. Eight Months Later, It Needed a Transmission.');
+assert.ok(!pkgWithStyles.html.includes('margin: 0.0px'), 'raw CSS is stripped from HTML');
+assert.ok(!pkgWithStyles.meta.title.includes('p.p1'), 'CSS is not treated as title');
+
 console.log('blogEditorDoc.test.mjs — all OK');

@@ -74,10 +74,19 @@ export default function ArticleEditor({ value, onChange, onPackageDetected }) {
       // Read the package's admin tables before the paste is trimmed down to body copy.
       handlePaste: (view, event) => {
         const html = event.clipboardData?.getData('text/html');
-        if (!html) return false;
-        const parsed = parsePaste(html);
-        setImported(parsed);
-        if (onPackageDetected) onPackageDetected(parsed);
+        const text = event.clipboardData?.getData('text/plain');
+        const payload = html || text || '';
+        if (!payload) return false;
+        const parsed = parsePaste(payload);
+        const isPackage = Boolean(parsed?.meta?.title || parsed?.decideFirst || parsed?.sources?.length);
+        if (isPackage) {
+          setImported(parsed);
+          if (onPackageDetected) onPackageDetected(parsed);
+          if (parsed.html && editor) {
+            editor.commands.setContent(parsed.html, true);
+          }
+          return true;
+        }
         return false;
       },
     },
@@ -85,6 +94,17 @@ export default function ArticleEditor({ value, onChange, onPackageDetected }) {
       onChange(htmlToSections(instance.getHTML(), initial.preserved));
     },
   });
+
+  useEffect(() => {
+    if (!editor) return;
+    const currentHtml = editor.getHTML();
+    const newHtml = sectionsToHtml(value);
+    if (!currentHtml || currentHtml === '<p></p>' || currentHtml === '<p></p>\n') {
+      if (newHtml && newHtml !== '<p></p>') {
+        editor.commands.setContent(newHtml, false);
+      }
+    }
+  }, [value, editor]);
 
   useEffect(() => {
     let cancelled = false;

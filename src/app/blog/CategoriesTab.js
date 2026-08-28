@@ -348,8 +348,8 @@ export default function CategoriesTab() {
 
       {/* Create/Edit Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="au-dash-modal w-full max-w-md shadow-xl">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="au-dash-modal w-full max-w-md shadow-2xl border border-white/20 bg-[#080c18] rounded-2xl my-auto">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.1)]">
               <h3 className="au-dash-card-title">
                 {editingCategory ? 'Edit Category' : 'Add Category'}

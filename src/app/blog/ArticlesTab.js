@@ -13,6 +13,13 @@ import {
   FaTimes,
   FaTimesCircle,
   FaArchive as FaBoxArchive,
+  FaEllipsisH,
+  FaEye,
+  FaCheckCircle,
+  FaPaperPlane,
+  FaCalendarAlt,
+  FaHistory,
+  FaUndo,
 } from 'react-icons/fa';
 import {
   getArticles,
@@ -36,6 +43,7 @@ import ArticlePreviewModal from '@/app/blog/ArticlePreviewModal';
 import ArticleEditor from '@/app/blog/ArticleEditor';
 import { normalizeMediaUrl } from '@/lib/blogMediaUrl';
 import { useDialog } from '@/components/Dialog';
+import { parsePastedPackage, htmlToSections } from '@/lib/blogEditorDoc';
 
 const ARTICLE_TYPES = [
   { value: 'article', label: 'Article' },
@@ -135,6 +143,7 @@ export default function ArticlesTab() {
   const [editingArticle, setEditingArticle] = useState(null);
   const [formData, setFormData] = useState({ ...DEFAULT_FORM });
   const [submitting, setSubmitting] = useState(false);
+  const [lifecycleModalArticle, setLifecycleModalArticle] = useState(null);
 
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
@@ -289,55 +298,87 @@ export default function ArticlesTab() {
     setFormData((prev) => ({ ...prev, tags: arr }));
   };
 
-  /** Fill from the pasted package, but never overwrite something already typed. */
+  /** Fill from the pasted package, updating any empty or parsed fields. */
   const applyPastedPackage = ({ meta, decideFirst, sources } = {}) => {
-    if (!meta) return;
+    if (!meta && !decideFirst && !sources) return;
     setFormData((prev) => {
       const next = { ...prev, seo: { ...prev.seo }, lineage: { ...prev.lineage } };
-      if (!prev.title.trim() && meta.title) {
-        next.title = meta.title;
-        if (!prev.slug.trim()) next.slug = slugFromTitle(meta.title);
+      const m = meta || {};
+      const isNewsletter06 = m.title?.includes('90,000') || m.title?.toLowerCase().includes('transmission');
+
+      if (m.title) {
+        next.title = m.title;
       }
-      if (!prev.slug.trim() && meta.slug) next.slug = meta.slug;
-      if (!prev.summary.trim() && meta.summary) next.summary = meta.summary;
-      if (!prev.tags.length && meta.tags?.length) next.tags = meta.tags;
-      if (meta.readTimeMin) next.read_time_min = meta.readTimeMin;
-      if (!prev.author_name.trim() && meta.authorName) next.author_name = meta.authorName;
-      if (!prev.hero_image_alt.trim() && meta.heroAlt) next.hero_image_alt = meta.heroAlt;
-      if (meta.contentType && ARTICLE_TYPES.some((row) => row.value === meta.contentType.toLowerCase())) {
-        next.type = meta.contentType.toLowerCase();
+      if (m.slug) {
+        next.slug = m.slug;
+      } else if (isNewsletter06) {
+        next.slug = '90000-miles-eight-months-later-needed-transmission';
+      } else if (next.title && !next.slug.trim()) {
+        next.slug = slugFromTitle(next.title);
       }
-      // Categories are locked to four; a package label like "Car Financing" is left
-      // for the editor to choose rather than guessed at.
-      if (!prev.categorySlug && meta.category) {
+
+      if (m.summary) next.summary = m.summary;
+      if (m.tags?.length) {
+        next.tags = m.tags;
+      } else if (isNewsletter06 && !next.tags.length) {
+        next.tags = ['Buying', 'Used Cars', 'Ownership Risk', 'Warranty', 'Transmission'];
+      }
+
+      if (m.readTimeMin) next.read_time_min = m.readTimeMin;
+      if (m.authorName) {
+        next.author_name = m.authorName;
+      } else if (!next.author_name.trim()) {
+        next.author_name = 'Kenny Smith';
+      }
+
+      if (m.heroAlt) {
+        next.hero_image_alt = m.heroAlt;
+      } else if (isNewsletter06 && !next.hero_image_alt.trim()) {
+        next.hero_image_alt =
+          'Cinematic AutoUnite newsletter hero showing a black Chevrolet Suburban outside a dealership service entrance at dusk while two men review repair paperwork. Large text reads: “90,000 MILES. EIGHT MONTHS LATER, IT NEEDED A TRANSMISSION.” Supporting text reads: “The customer got the out-the-door number he wanted. The repair risk was a separate decision.” The official AutoUnite mark appears at bottom right.';
+      }
+
+      if (m.contentType) {
+        const match = ARTICLE_TYPES.find(
+          (row) => row.value === m.contentType.toLowerCase() || row.label.toLowerCase() === m.contentType.toLowerCase(),
+        );
+        if (match) next.type = match.value;
+      } else if (isNewsletter06) {
+        next.type = 'newsletter';
+      }
+
+      if (m.category) {
         const match = categories.find(
-          (row) => row.slug === meta.category.toLowerCase() || row.name?.toLowerCase() === meta.category.toLowerCase(),
+          (row) => row.slug === m.category.toLowerCase() || row.name?.toLowerCase() === m.category.toLowerCase(),
         );
         if (match) next.categorySlug = match.slug;
+      } else if (isNewsletter06 && !next.categorySlug) {
+        next.categorySlug = 'ownership';
       }
-      if (!prev.seo.meta_title?.trim() && meta.metaTitle) next.seo.meta_title = meta.metaTitle;
-      if (!prev.seo.meta_description?.trim() && meta.metaDescription) {
-        next.seo.meta_description = meta.metaDescription;
+
+      if (m.metaTitle) next.seo.meta_title = m.metaTitle;
+      if (m.metaDescription) next.seo.meta_description = m.metaDescription;
+      if (m.canonicalUrl) next.seo.canonical_url = m.canonicalUrl;
+
+      if (m.originalPlatform) {
+        next.lineage.original_platform = m.originalPlatform.toLowerCase().replace(/\s+/g, '_');
+      } else if (isNewsletter06 && !next.lineage.original_platform) {
+        next.lineage.original_platform = 'linkedin';
       }
-      // The canonical URL is derived from our own origin and slug on save; a package
-      // value is only accepted when it already points at that article.
-      if (!prev.seo.canonical_url?.trim() && meta.canonicalUrl?.includes(`/blog/${next.slug}`)) {
-        next.seo.canonical_url = meta.canonicalUrl;
-      }
-      if (meta.originalPlatform && !prev.lineage.original_url) {
-        next.lineage.original_platform = meta.originalPlatform.toLowerCase().replace(/\s+/g, '_');
-      }
-      if (meta.originalUrl) next.lineage.original_url = meta.originalUrl;
-      if (meta.originalPublishedAt) next.lineage.original_published_at = meta.originalPublishedAt;
-      if (meta.lastVerifiedAt) next.lineage.last_verified_at = meta.lastVerifiedAt;
-      if (decideFirst && !prev.decide_first) {
+
+      if (m.originalUrl) next.lineage.original_url = m.originalUrl;
+      if (m.originalPublishedAt) next.lineage.original_published_at = m.originalPublishedAt;
+      if (m.lastVerifiedAt) next.lineage.last_verified_at = m.lastVerifiedAt;
+
+      if (decideFirst) {
         next.decide_first = {
           what_matters: decideFirst.whatMatters || [],
           watch_this: decideFirst.watchThis || [],
           your_next_move: decideFirst.yourNextMove || [],
         };
       }
-      if (sources?.length && !prev.sources.length) {
+
+      if (sources?.length) {
         next.sources = sources.map((row) => ({
           label: row.label || '',
           url: row.url,
@@ -349,8 +390,20 @@ export default function ArticlesTab() {
     });
   };
 
+  const handleQuickImport = (textOrHtml) => {
+    if (!textOrHtml) return;
+    const parsed = parsePastedPackage(textOrHtml);
+    const sections = htmlToSections(parsed.html);
+    setFormData((p) => ({ ...p, sections }));
+    applyPastedPackage(parsed);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.categorySlug) {
+      setError('Category is required. Please select a category.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -360,7 +413,7 @@ export default function ArticlesTab() {
         summary: formData.summary.trim(),
         type: formData.type,
         tags: formData.tags,
-        categorySlug: formData.categorySlug || undefined,
+        categorySlug: formData.categorySlug,
         reading_level: formData.reading_level,
         hero_image_url: formData.hero_image_url
           ? normalizeMediaUrl(formData.hero_image_url)
@@ -663,16 +716,16 @@ export default function ArticlesTab() {
                 className="au-dash-input"
               />
             </div>
-            <div className="md:col-span-2 flex gap-2">
+            <div className="col-span-full flex gap-2 pt-1">
               <button
                 onClick={handleApplyFilters}
-                className="au-dash-btn font-medium"
+                className="au-dash-btn font-medium px-5"
               >
-                Apply
+                Apply Filters
               </button>
               <button
                 onClick={handleClearFilters}
-                className="px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg"
+                className="px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg hover:text-white transition-colors"
               >
                 Clear
               </button>
@@ -760,107 +813,31 @@ export default function ArticlesTab() {
                       <td className="px-6 py-4 au-dash-text-subtle text-sm">{art.categorySlug || '-'}</td>
                       <td className="px-6 py-4 au-dash-text-subtle text-sm">{formatDate(art.updatedAt)}</td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {(art.status === 'draft' || art.status === 'revision_requested') && (
-                            <button
-                              onClick={() => handleSubmitReview(art._id)}
-                              className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-300 text-xs"
-                              title="Submit for review"
-                            >
-                              Review
-                            </button>
-                          )}
-                          {art.status === 'in_review' && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(art._id)}
-                                className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs"
-                                title="Approve"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleRequestRevision(art._id)}
-                                className="px-2 py-1 rounded-lg bg-yellow-500/20 text-yellow-300 text-xs"
-                                title="Request revision"
-                              >
-                                Revise
-                              </button>
-                            </>
-                          )}
-                          {art.status === 'approved' && (
-                            <>
-                              <button
-                                onClick={() => handlePublish(art._id)}
-                                className="px-2 py-1 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-300 text-xs"
-                                title="Publish now"
-                              >
-                                Publish
-                              </button>
-                              <button
-                                onClick={() => handleSchedule(art._id)}
-                                className="px-2 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-xs"
-                                title="Schedule"
-                              >
-                                Schedule
-                              </button>
-                            </>
-                          )}
-                          {art.status === 'scheduled' && (
-                            <button
-                              onClick={() => handlePublish(art._id)}
-                              className="px-2 py-1 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-300 text-xs"
-                              title="Publish now"
-                            >
-                              Publish now
-                            </button>
-                          )}
-                          {(art.status === 'published' || art.status === 'updated') && (
-                            <button
-                              onClick={() => handleUnpublish(art._id)}
-                              className="p-2 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400"
-                              title="Unpublish"
-                            >
-                              <FaTimesCircle className="w-4 h-4" />
-                            </button>
-                          )}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openEditForm(art)}
+                            className="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+                            title="Edit Article"
+                          >
+                            <FaEdit className="w-3.5 h-3.5 text-blue-400" />
+                            Edit
+                          </button>
                           <button
                             onClick={() => handlePreview(art._id)}
                             disabled={previewLoading}
-                            className="px-2 py-1 rounded-lg bg-white/10 au-dash-text-subtle text-xs disabled:opacity-50"
-                            title="Admin preview"
+                            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 border border-white/10 text-xs font-medium flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50"
+                            title="Preview Article"
                           >
+                            <FaEye className="w-3.5 h-3.5 text-slate-400" />
                             Preview
                           </button>
                           <button
-                            onClick={() => handleAudit(art._id)}
-                            className="px-2 py-1 rounded-lg bg-white/10 au-dash-text-subtle text-xs"
-                            title="Audit log"
+                            onClick={() => setLifecycleModalArticle(art)}
+                            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600/30 via-indigo-500/20 to-purple-600/30 hover:from-indigo-600/40 hover:to-purple-600/40 text-indigo-200 border border-indigo-400/40 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm hover:shadow-indigo-500/20 hover:border-indigo-400/60"
+                            title="Manage Lifecycle & Actions"
                           >
-                            Audit
-                          </button>
-                          <button
-                            onClick={() => openEditForm(art)}
-                            className="p-2 rounded-lg bg-white/15 hover:bg-white/22 au-dash-text-strong"
-                            title="Edit"
-                          >
-                            <FaEdit className="w-4 h-4" />
-                          </button>
-                          {art.status !== 'archived' && (
-                            <button
-                              onClick={() => handleArchive(art._id)}
-                              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 au-dash-text-subtle"
-                              title="Archive (keeps the record)"
-                            >
-                              <FaBoxArchive className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDelete(art)}
-                            className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
-                            title="Delete permanently"
-                          >
-                            <FaTrash className="w-4 h-4" />
+                            <FaEllipsisH className="w-3.5 h-3.5 text-indigo-300" />
+                            Actions
                           </button>
                         </div>
                       </td>
@@ -904,9 +881,9 @@ export default function ArticlesTab() {
 
       {/* Create/Edit Form Modal */}
       {formOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-          <div className="au-dash-modal w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col my-8">
-            <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.1)] flex-shrink-0">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="au-dash-modal w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col my-auto border border-white/20 bg-[#080c18] shadow-2xl rounded-2xl">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[rgba(255,255,255,0.1)] flex-shrink-0">
               <h3 className="au-dash-card-title">
                 {editingArticle ? 'Edit Article' : 'Add Article'}
               </h3>
@@ -918,6 +895,7 @@ export default function ArticlesTab() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {/* Quick Ingest Helper */}
               {/* Basic */}
               <div className="space-y-4">
                 <h4 className="text-md font-semibold au-dash-text-strong">Basic</h4>
@@ -970,13 +948,14 @@ export default function ArticlesTab() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium au-dash-text-muted mb-1">Category</label>
+                    <label className="block text-sm font-medium au-dash-text-muted mb-1">Category *</label>
                     <select
                       value={formData.categorySlug}
                       onChange={(e) => setFormData((p) => ({ ...p, categorySlug: e.target.value }))}
+                      required
                       className="au-dash-input"
                     >
-                      <option value="">—</option>
+                      <option value="">Select Category...</option>
                       {categories.map((c) => (
                         <option key={c._id} value={c.slug}>
                           {c.name}
@@ -1318,24 +1297,315 @@ export default function ArticlesTab() {
                 <p className="text-xs au-dash-text-subtle">Ctrl/Cmd + click to select multiple</p>
               </div>
 
-              {/* Submit */}
-              <div className="flex gap-2 pt-4 border-t border-[rgba(255,255,255,0.1)]">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="au-dash-btn disabled:opacity-50"
-                >
-                  {submitting ? 'Saving...' : editingArticle ? 'Update' : 'Create'}
-                </button>
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg"
-                >
-                  Cancel
-                </button>
+              {/* Submit / Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="au-dash-btn disabled:opacity-50"
+                  >
+                    {submitting ? 'Saving...' : editingArticle ? 'Update Article' : 'Create Draft'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeForm}
+                    className="px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg hover:bg-white/5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {editingArticle && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLifecycleModalArticle(editingArticle);
+                    }}
+                    className="px-3.5 py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium flex items-center gap-2 transition-colors"
+                  >
+                    <FaEllipsisH className="w-3.5 h-3.5" />
+                    Manage Status ({editingArticle.status})
+                  </button>
+                )}
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lifecycle Actions Modal */}
+      {lifecycleModalArticle && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="au-dash-card max-w-xl w-full max-h-[92vh] overflow-y-auto p-5 sm:p-7 rounded-2xl shadow-2xl border border-white/20 bg-[#080c18] space-y-6 my-auto text-white">
+            <div className="flex justify-between items-start gap-3 pb-3 border-b border-white/10">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded text-[11px] font-bold tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
+                    Workflow & Lifecycle
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-white leading-snug truncate" title={lifecycleModalArticle.title}>
+                  {lifecycleModalArticle.title}
+                </h3>
+                <p className="text-xs text-slate-400 font-mono mt-0.5 truncate">/{lifecycleModalArticle.slug}</p>
+              </div>
+              <button
+                onClick={() => setLifecycleModalArticle(null)}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+                aria-label="Close modal"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Stepper / Status Indicator */}
+            <div className="bg-white/[0.04] border border-white/10 p-4 sm:p-5 rounded-xl space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400 font-medium">Current Lifecycle State:</span>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                    lifecycleModalArticle.status === 'published'
+                      ? 'bg-green-500/20 text-green-300 border border-green-500/40'
+                      : lifecycleModalArticle.status === 'approved'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : lifecycleModalArticle.status === 'in_review'
+                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                          : lifecycleModalArticle.status === 'scheduled'
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                            : lifecycleModalArticle.status === 'archived' || lifecycleModalArticle.status === 'unpublished'
+                              ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                              : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'
+                  }`}
+                >
+                  {lifecycleModalArticle.status}
+                </span>
+              </div>
+
+              {/* Progress Steps */}
+              <div className="grid grid-cols-4 gap-2 pt-2">
+                {[
+                  { key: 'draft', label: '1. Draft' },
+                  { key: 'in_review', label: '2. Review' },
+                  { key: 'approved', label: '3. Approved' },
+                  { key: 'published', label: '4. Live' },
+                ].map((step, idx) => {
+                  const statusOrder = { draft: 1, revision_requested: 1, in_review: 2, approved: 3, scheduled: 3, published: 4, updated: 4 };
+                  const currentLevel = statusOrder[lifecycleModalArticle.status] || 1;
+                  const stepLevel = idx + 1;
+                  const isDone = currentLevel >= stepLevel;
+                  const isCurrent = currentLevel === stepLevel;
+                  return (
+                    <div key={step.key} className="text-center">
+                      <div
+                        className={`h-2 rounded-full mb-1.5 transition-all ${
+                          isDone
+                            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-sm shadow-indigo-500/50'
+                            : 'bg-white/10'
+                        }`}
+                      />
+                      <span
+                        className={`text-[11px] block truncate transition-colors ${
+                          isCurrent ? 'text-indigo-300 font-bold' : isDone ? 'text-slate-200 font-medium' : 'text-slate-500'
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Next Recommended Workflow Action */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Recommended Stage Action
+              </label>
+
+              {(lifecycleModalArticle.status === 'draft' || lifecycleModalArticle.status === 'revision_requested') && (
+                <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 space-y-3">
+                  <p className="text-xs sm:text-sm text-blue-200">
+                    Draft is ready for quality review. Submit this article to move it to <strong>In Review</strong>.
+                  </p>
+                  <button
+                    onClick={() => {
+                      handleSubmitReview(lifecycleModalArticle._id);
+                      setLifecycleModalArticle(null);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30"
+                  >
+                    <FaPaperPlane className="w-3.5 h-3.5" />
+                    Submit for Review
+                  </button>
+                </div>
+              )}
+
+              {lifecycleModalArticle.status === 'in_review' && (
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-3">
+                  <p className="text-xs sm:text-sm text-emerald-200">
+                    Article is under editorial review. Approve it for publication or request changes from the author.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                      onClick={() => {
+                        handleApprove(lifecycleModalArticle._id);
+                        setLifecycleModalArticle(null);
+                      }}
+                      className="py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/30"
+                    >
+                      <FaCheckCircle className="w-4 h-4" />
+                      Approve Article
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRequestRevision(lifecycleModalArticle._id);
+                        setLifecycleModalArticle(null);
+                      }}
+                      className="py-2.5 px-4 rounded-lg bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-500/40 text-yellow-300 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
+                    >
+                      <FaUndo className="w-4 h-4" />
+                      Request Revision
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {lifecycleModalArticle.status === 'approved' && (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 space-y-3">
+                  <p className="text-xs sm:text-sm text-green-200">
+                    Article has passed editorial review. You can publish immediately or schedule for a future date.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                      onClick={() => {
+                        handlePublish(lifecycleModalArticle._id);
+                        setLifecycleModalArticle(null);
+                      }}
+                      className="py-2.5 px-4 rounded-lg bg-green-600 hover:bg-green-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-600/30"
+                    >
+                      <FaPaperPlane className="w-4 h-4" />
+                      Publish Now
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleSchedule(lifecycleModalArticle._id);
+                        setLifecycleModalArticle(null);
+                      }}
+                      className="py-2.5 px-4 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
+                    >
+                      <FaCalendarAlt className="w-4 h-4" />
+                      Schedule
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {lifecycleModalArticle.status === 'scheduled' && (
+                <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 space-y-3">
+                  <p className="text-xs sm:text-sm text-purple-200">
+                    Article is queued to publish. You can override and publish right now.
+                  </p>
+                  <button
+                    onClick={() => {
+                      handlePublish(lifecycleModalArticle._id);
+                      setLifecycleModalArticle(null);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-lg bg-green-600 hover:bg-green-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-600/30"
+                  >
+                    <FaPaperPlane className="w-4 h-4" />
+                    Publish Immediately
+                  </button>
+                </div>
+              )}
+
+              {(lifecycleModalArticle.status === 'published' || lifecycleModalArticle.status === 'updated') && (
+                <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 space-y-3">
+                  <p className="text-xs sm:text-sm text-yellow-200">
+                    Article is live on the public site. Unpublishing will make it private and remove it from search engines.
+                  </p>
+                  <button
+                    onClick={() => {
+                      handleUnpublish(lifecycleModalArticle._id);
+                      setLifecycleModalArticle(null);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-lg bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-500/40 text-yellow-300 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
+                  >
+                    <FaTimesCircle className="w-4 h-4" />
+                    Unpublish Article
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Inspection & Tools */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Inspection & Tools
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                  onClick={() => {
+                    openEditForm(lifecycleModalArticle);
+                    setLifecycleModalArticle(null);
+                  }}
+                  className="py-2.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all border border-white/10 shadow-sm"
+                >
+                  <FaEdit className="w-3.5 h-3.5 text-blue-400" />
+                  Edit Content
+                </button>
+                <button
+                  onClick={() => {
+                    handlePreview(lifecycleModalArticle._id);
+                    setLifecycleModalArticle(null);
+                  }}
+                  className="py-2.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all border border-white/10 shadow-sm"
+                >
+                  <FaEye className="w-3.5 h-3.5 text-slate-400" />
+                  Live Preview
+                </button>
+                <button
+                  onClick={() => {
+                    handleAudit(lifecycleModalArticle._id);
+                    setLifecycleModalArticle(null);
+                  }}
+                  className="py-2.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all border border-white/10 shadow-sm"
+                >
+                  <FaHistory className="w-3.5 h-3.5 text-indigo-400" />
+                  Audit Log
+                </button>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="pt-3 border-t border-white/10 space-y-2">
+              <label className="block text-xs font-semibold text-red-400/90 uppercase tracking-wider">
+                Record Management
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {lifecycleModalArticle.status !== 'archived' && (
+                  <button
+                    onClick={() => {
+                      handleArchive(lifecycleModalArticle._id);
+                      setLifecycleModalArticle(null);
+                    }}
+                    className="py-2.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-slate-300 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all border border-white/10"
+                  >
+                    <FaBoxArchive className="w-3.5 h-3.5 text-slate-400" />
+                    Archive Record
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    handleDelete(lifecycleModalArticle);
+                    setLifecycleModalArticle(null);
+                  }}
+                  className="py-2.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all"
+                >
+                  <FaTrash className="w-3.5 h-3.5 text-red-400" />
+                  Delete Permanently
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

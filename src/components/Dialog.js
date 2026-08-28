@@ -97,7 +97,7 @@ function DialogView({ config, value, onValueChange, onCancel, onSubmit, inputRef
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <form onSubmit={submit} className="au-dash-modal w-full max-w-md overflow-hidden flex flex-col">
         <div className="flex items-start justify-between gap-3 p-4 border-b border-[rgba(255,255,255,0.1)]">
           <h3 className="au-dash-card-title">{title}</h3>

@@ -57,19 +57,19 @@ export default function BlogPageContent({ initialTab } = {}) {
   return (
     <div className="au-dash-page">
       <div className="au-dash-tabs-underline">
-        <nav className="flex space-x-1 overflow-x-auto">
+        <nav className="flex space-x-1 overflow-x-auto pb-1 scrollbar-thin">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`
-                  px-6 py-3 text-sm font-medium
+                  px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium
                   border-b-2 transition-all duration-300
-                  whitespace-nowrap
+                  whitespace-nowrap flex-shrink-0
                   ${
                     activeTab === tab.id
-                      ? 'au-dash-tab-underline--active'
+                      ? 'au-dash-tab-underline--active font-semibold'
                       : 'au-dash-tab-underline'
                   }
                 `}
@@ -79,7 +79,9 @@ export default function BlogPageContent({ initialTab } = {}) {
           ))}
         </nav>
       </div>
-      {renderContent()}
+      <div className="pt-2">
+        {renderContent()}
+      </div>
     </div>
   );
 }

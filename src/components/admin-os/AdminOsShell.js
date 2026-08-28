@@ -116,12 +116,13 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            .aos-shell{display:grid!important;grid-template-columns:248px minmax(0,1fr)!important;min-height:100vh;color:#fff;background:#050812;position:relative;isolation:isolate;overflow:hidden}
-            .aos-sidebar{display:flex!important;flex-direction:column!important;height:100vh;padding:28px 20px 24px;border-right:1px solid rgba(255,255,255,.13);background:linear-gradient(180deg,rgba(3,6,13,.92),rgba(7,11,22,.88));overflow-y:auto;z-index:2}
+            .aos-shell{display:grid!important;grid-template-columns:248px minmax(0,1fr)!important;min-height:100vh;color:#fff;background:#050812;position:relative}
+            .aos-sidebar{display:flex!important;flex-direction:column!important;height:100vh;padding:28px 20px 24px;border-right:1px solid rgba(255,255,255,.13);background:linear-gradient(180deg,rgba(3,6,13,.92),rgba(7,11,22,.88));overflow-y:auto;z-index:20}
             .aos-nav{display:flex!important;flex-direction:column!important;gap:9px;padding-top:12px}
             .aos-nav-btn{border:1px solid transparent;border-radius:14px;background:transparent;color:rgba(255,255,255,.83);padding:13px 14px;display:flex;align-items:center;gap:12px;font:inherit;font-size:15px;cursor:pointer;text-align:left;width:100%}
             .aos-nav-btn.is-active{background:linear-gradient(135deg,#4517f5,#210c9f);border-color:rgba(142,92,255,.45);color:#fff}
-            .aos-main{min-width:0;height:100vh;overflow:auto;padding:30px 44px 30px 50px;display:grid;grid-template-rows:auto auto minmax(300px,1fr) auto auto auto;gap:16px}
+            .aos-main{min-width:0;height:100vh;overflow:auto;padding:30px 44px 30px 50px;display:grid;grid-template-rows:auto auto minmax(300px,1fr) auto auto auto;gap:16px;position:relative;z-index:auto}
+            .aos-main--tool{display:block!important;grid-template-rows:none!important;padding:20px 28px!important}
             .aos-hero h1{margin:6px 0 10px;font-size:clamp(42px,4.1vw,72px);line-height:.95;letter-spacing:-.055em;font-weight:700}
             .aos-carousel{position:relative;display:flex;align-items:center;justify-content:center;min-height:320px;padding:0 56px 28px}
             .aos-cards{width:min(1060px,100%);display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:24px}

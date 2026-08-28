@@ -114,11 +114,11 @@ export function sectionsToHtml(sections = []) {
  */
 const MARKERS = {
   // "ARTICLE COPY — PASTE FROM HERE" is the older newsletter wording.
-  bodyStart: ['ARTICLE BODY', 'ARTICLE COPY PASTE FROM HERE'],
+  bodyStart: ['ARTICLE BODY', 'ARTICLE COPY PASTE FROM HERE', 'ARTICLE COPY'],
   decideFirst: ['DECIDE FIRST'],
-  sources: ['ADMIN SOURCE RECORDS'],
+  sources: ['ADMIN SOURCE RECORDS', 'SOURCES METHODOLOGY', 'SOURCES AND METHODOLOGY'],
   // Everything from the first of these onwards is importer/QA instruction, never article copy.
-  adminOnly: ['ADMIN SOURCE RECORDS', 'BENCHMARK IMPORT', 'RENDERER EXPECTATIONS', 'REQUIRED LIVE PROOF'],
+  adminOnly: ['ADMIN SOURCE RECORDS', 'BENCHMARK IMPORT', 'RENDERER EXPECTATIONS', 'REQUIRED LIVE PROOF', 'RELATED CONTENT'],
 };
 
 /** Body copy can quote a marker phrase; a real marker is a short standalone line. */
@@ -144,8 +144,20 @@ function findTable(nodes, from, to) {
   const end = to < 0 ? nodes.length : to;
   for (let index = Math.max(from, 0); index < end; index += 1) {
     const node = nodes[index];
+    if (!node) continue;
     const table = node.tagName?.toLowerCase() === 'table' ? node : node.querySelector?.('table');
-    if (table) return { table, node, index };
+    if (table) {
+      // If table only has header (1 row) and next node is also a table, check next node
+      const rows = table.querySelectorAll('tr');
+      if (rows.length < 2 && index + 1 < end) {
+        const nextNode = nodes[index + 1];
+        const nextTable = nextNode?.tagName?.toLowerCase() === 'table' ? nextNode : nextNode?.querySelector?.('table');
+        if (nextTable && nextTable.querySelectorAll('tr').length >= 2) {
+          return { table: nextTable, node: nextNode, index: index + 1 };
+        }
+      }
+      return { table, node, index };
+    }
   }
   return null;
 }
@@ -181,10 +193,14 @@ const META_ROWS = {
   title: 'title',
   deck: 'summary',
   excerpt: 'summary',
+  'excerpt / deck': 'summary',
+  'excerpt/deck': 'summary',
+  summary: 'summary',
   slug: 'slug',
   category: 'category',
   tags: 'tags',
   'read time': 'readTimeMin',
+  'reading time': 'readTimeMin',
   'seo title': 'metaTitle',
   meta: 'metaDescription',
   'seo description': 'metaDescription',
@@ -221,7 +237,10 @@ const splitTags = (value) =>
 function metaFromTable(table) {
   const meta = {};
   const distribution = {};
-  for (const [label, value] of tableRows(table)) {
+  for (const cells of tableRows(table)) {
+    if (!cells || cells.length < 2) continue;
+    const label = cells[0];
+    const value = cells.slice(1).join(' | ');
     const field = META_ROWS[String(label || '').toLowerCase()];
     if (!field) continue;
     const text = resolved(value);
@@ -293,6 +312,8 @@ const SOURCE_COLUMNS = {
   'source name': 'sourceName',
   label: 'label',
   title: 'label',
+  'reader-facing label': 'label',
+  'reader facing label': 'label',
   url: 'url',
   'full url': 'url',
   link: 'url',
@@ -312,7 +333,7 @@ function sourcesFromTable(table) {
       fields.forEach((field, index) => {
         const text = resolved(cells[index]);
         if (!field || !text) return;
-        source[field] = field === 'verifiedAt' ? isoDate(text) : text;
+        source[field] = field === 'verifiedAt' ? (isoDate(text) || text) : text;
       });
       return source;
     })
@@ -370,6 +391,113 @@ export function promoteBoldHeadings(html) {
   return doc.body.innerHTML;
 }
 
+function isCssNoise(text) {
+  const t = String(text || '').trim();
+  if (!t) return false;
+  return (
+    /^[a-z0-9_#.,\s-]+\{[^}]*(?:margin|font|color|border|padding|text-decoration|display|background)[^}]*\}/i.test(t) ||
+    /(?:margin:\s*0\.0px|font:\s*\d+\.\d+px\s*Times|border-collapse:\s*collapse)/i.test(t)
+  );
+}
+
+export function markdownPipesToTables(text) {
+  if (!text || !text.includes('|')) return text;
+  const lines = text.split(/\r?\n/);
+  const out = [];
+  let inTable = false;
+  let tableRows = [];
+
+  const flushTable = () => {
+    if (!tableRows.length) return;
+    const htmlRows = tableRows
+      .map((row) => {
+        const cells = row
+          .split('|')
+          .map((c) => c.trim())
+          .filter((c, idx, arr) => {
+            // drop leading/trailing empty cells from outer pipes
+            if ((idx === 0 || idx === arr.length - 1) && !c) return false;
+            return true;
+          });
+        if (!cells.length) return '';
+        const isDashes = cells.every((c) => /^[-=:]+$/.test(c));
+        if (isDashes) return '';
+        const tds = cells.map((cell) => `<td>${cell}</td>`).join('');
+        return `<tr>${tds}</tr>`;
+      })
+      .filter(Boolean)
+      .join('');
+
+    if (htmlRows) {
+      out.push(`<table>${htmlRows}</table>`);
+    }
+    tableRows = [];
+    inTable = false;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const isDivider = /^[-=]{3,}$/.test(line);
+    if (isDivider) {
+      // In markdown tables, dashed lines separate the header from data rows.
+      // Do not flush the table on header separator lines.
+      continue;
+    }
+    if (line.includes('|') && !line.startsWith('#') && !line.startsWith('Heading')) {
+      inTable = true;
+      tableRows.push(line);
+    } else {
+      if (inTable) flushTable();
+      if (line.startsWith('Heading 2:')) {
+        out.push(`<h2>${line.replace(/^Heading 2:\s*/i, '').trim()}</h2>`);
+      } else if (line.startsWith('Heading 3:')) {
+        out.push(`<h3>${line.replace(/^Heading 3:\s*/i, '').trim()}</h3>`);
+      } else if (line.startsWith('Quote style:')) {
+        let quoteText = line.replace(/^Quote style:\s*/i, '').trim();
+        if (!quoteText && i + 1 < lines.length) {
+          quoteText = lines[++i].trim();
+        }
+        if (quoteText) out.push(`<blockquote><p>${quoteText}</p></blockquote>`);
+      } else if (/^[•\-*]\s+/.test(line)) {
+        out.push(`<ul><li>${line.replace(/^[•\-*]\s+/, '')}</li></ul>`);
+      } else if (line) {
+        out.push(`<p>${line}</p>`);
+      }
+    }
+  }
+  if (inTable) flushTable();
+  return out.join('\n');
+}
+
+export function sanitizeHtmlInput(html) {
+  if (!html) return '';
+  let str = String(html);
+
+  // If text or simple HTML has pipes or markdown styles, normalize breaks and paragraph tags
+  if (str.includes('|') && !str.includes('<table')) {
+    str = str
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n')
+      .replace(/<\/?(?:p|div|span)[^>]*>/gi, '');
+    str = markdownPipesToTables(str);
+  }
+
+  // Convert markdown links [text](url) to <a> tags if present as plain text/markdown
+  str = str.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s\)]+|\/[^\s\)]+)\)/g, '<a href="$2">$1</a>');
+
+  str = str
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<meta[^>]*>/gi, '')
+    .replace(/<link[^>]*>/gi, '')
+    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+
+  // Strip standalone CSS rules if passed as raw plain text
+  str = str.replace(/[a-z0-9_#.,\s-]+\{[^}]*(?:margin|font|color|border|padding|text-decoration)[^}]*\}/gi, '');
+  return str.trim();
+}
+
 /**
  * Splits a pasted package into the four things it actually carries: the public
  * body, the header metadata, the Decide First module and the source records.
@@ -383,8 +511,10 @@ export function parsePastedPackage(html) {
   const empty = { html: html || '', meta: {}, decideFirst: null, sources: [] };
   if (typeof window === 'undefined' || !html) return empty;
 
-  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
-  const nodes = [...doc.body.children];
+  const cleaned = sanitizeHtmlInput(html);
+  const doc = new DOMParser().parseFromString(`<body>${cleaned}</body>`, 'text/html');
+  doc.querySelectorAll('style, script, meta, link, noscript, head, svg, iframe').forEach((e) => e.remove());
+  const nodes = [...doc.body.children].filter((n) => !isCssNoise(n.textContent));
   if (!nodes.length) return empty;
 
   const bodyAt = markerIndex(nodes, MARKERS.bodyStart);
@@ -393,7 +523,7 @@ export function parsePastedPackage(html) {
   const adminAt = markerIndex(nodes, MARKERS.adminOnly, Math.max(bodyAt, 0));
 
   const beforeBody = [decideAt, bodyAt, adminAt].filter((index) => index >= 0).sort((a, b) => a - b)[0] ?? -1;
-  const metaHit = findTable(nodes, 0, beforeBody);
+  const metaHit = findTable(nodes, 0, beforeBody >= 0 ? beforeBody : nodes.length);
   const meta = metaHit ? metaFromTable(metaHit.table) : {};
   const metaIsHeader = Object.keys(meta).length >= META_TABLE_MIN_ROWS;
   if (metaIsHeader && !meta.title) {
@@ -401,11 +531,89 @@ export function parsePastedPackage(html) {
     if (title) meta.title = title;
   }
 
-  const decideHit = decideAt >= 0 ? findTable(nodes, decideAt + 1, bodyAt >= 0 ? bodyAt : -1) : null;
-  const decideFirst = decideHit ? decideFirstFromTable(decideHit.table) : null;
+  // Fallback: package without metadata table (e.g. semantic H1 + subtitle deck, or has package markers like DECIDE FIRST / SOURCES).
+  const h1Present = nodes.some((n) => n.tagName?.toLowerCase() === 'h1');
+  const isPackage = metaIsHeader || h1Present || decideAt >= 0 || bodyAt >= 0 || adminAt >= 0 || nodes.length >= 2;
+  if (!meta.title && isPackage) {
+    const leadLimit = beforeBody >= 0 ? beforeBody : nodes.length;
+    const leadNodes = nodes.slice(0, leadLimit).filter((n) => n.textContent?.trim());
+    const h1Node = leadNodes.find((n) => n.tagName?.toLowerCase() === 'h1');
+    if (h1Node) {
+      meta.title = h1Node.textContent.trim();
+      const h1Idx = leadNodes.indexOf(h1Node);
+      const deckNode = leadNodes.slice(h1Idx + 1).find((n) => n.tagName?.toLowerCase() === 'p');
+      if (deckNode && !meta.summary) {
+        const deckText = deckNode.textContent.trim();
+        if (deckText && !normalizeMarker(deckText).startsWith('DECIDE FIRST')) {
+          meta.summary = deckText;
+        }
+      }
+    } else if (leadNodes.length > 0) {
+      const firstText = leadNodes[0].textContent.trim();
+      if (firstText && !normalizeMarker(firstText).startsWith('DECIDE FIRST') && !/^h[1-2]$/i.test(leadNodes[0].tagName)) {
+        meta.title = firstText;
+        if (leadNodes.length > 1) {
+          const secondText = leadNodes[1].textContent.trim();
+          if (secondText && !normalizeMarker(secondText).startsWith('DECIDE FIRST') && !/^h[1-2]$/i.test(leadNodes[1].tagName)) {
+            meta.summary = secondText;
+          }
+        }
+      }
+    }
+  }
 
-  const sourcesHit = sourcesAt >= 0 ? findTable(nodes, sourcesAt + 1, -1) : null;
-  const sources = sourcesHit ? sourcesFromTable(sourcesHit.table) : [];
+  const decideHit = decideAt >= 0 ? findTable(nodes, decideAt + 1, bodyAt >= 0 ? bodyAt : -1) : null;
+  let decideFirst = decideHit ? decideFirstFromTable(decideHit.table) : null;
+
+  // Fallback: Decide First authored as text paragraphs instead of a table
+  if (!decideFirst && decideAt >= 0) {
+    const DECIDE_KEYS = {
+      'what matters': 'whatMatters',
+      'watch this': 'watchThis',
+      'your next move': 'yourNextMove',
+    };
+    decideFirst = {};
+    let currentKey = null;
+    const searchLimit = bodyAt >= 0 ? bodyAt : nodes.length;
+    for (let i = decideAt + 1; i < searchLimit; i++) {
+      const text = nodes[i].textContent.trim();
+      const normalized = text.toLowerCase().replace(/[^a-z0-9 ]/g, '');
+      if (DECIDE_KEYS[normalized]) {
+        currentKey = DECIDE_KEYS[normalized];
+      } else if (currentKey && text) {
+        if (/^h[1-2]$/i.test(nodes[i].tagName) || text.toUpperCase() === 'OVERVIEW') break;
+        decideFirst[currentKey] = [text];
+        currentKey = null;
+      }
+    }
+    if (!Object.keys(decideFirst).length) decideFirst = null;
+  }
+
+  const sourcesHit = sourcesAt >= 0 ? findTable(nodes, sourcesAt, -1) : null;
+  let sources = sourcesHit ? sourcesFromTable(sourcesHit.table) : [];
+
+  // Fallback: sources listed in bullet list or links under "Sources & Methodology" or "Sources" heading
+  if (!sources.length) {
+    const sourcesHeadingIdx = nodes.findIndex((n) =>
+      /^(sources(\s*&|\s+and)?\s*methodology|sources)$/i.test(n.textContent.trim()),
+    );
+    if (sourcesHeadingIdx >= 0) {
+      for (let i = sourcesHeadingIdx + 1; i < nodes.length; i++) {
+        const node = nodes[i];
+        if (/^h[1-6]$/i.test(node.tagName) || /^(related|method\s*note)/i.test(node.textContent.trim())) break;
+        const links = [...node.querySelectorAll('a')];
+        for (const a of links) {
+          const url = a.getAttribute('href');
+          const label = a.textContent.trim();
+          if (url && label) {
+            const parts = label.split(/—|-/).map((s) => s.trim());
+            const sourceName = parts.length > 1 ? parts[0] : '';
+            sources.push({ sourceName, label, url });
+          }
+        }
+      }
+    }
+  }
 
   const consumed = new Set();
   if (metaIsHeader && metaHit) consumed.add(metaHit.node);
@@ -454,14 +662,57 @@ function mergeRuns(runs) {
   }, []);
 }
 
+function isDecisionSection(text) {
+  const norm = String(text || '').trim().toLowerCase().replace(/['"’]/g, '');
+  const clean = norm.replace(/[,\s&]+/g, ' ');
+  const KNOWN = [
+    'overview',
+    'the customers question',
+    'paperwork coverage inspection',
+    'what the technical guidance can prove',
+    'purchase price vs ownership risk',
+    'responsibility mileage goodwill',
+    'what to decide before delivery',
+  ];
+  return KNOWN.some((k) => clean === k || norm === k);
+}
+
+function isKnownSubheading(text) {
+  const norm = String(text || '').trim().toLowerCase().replace(/['"’]/g, '').replace(/[,\s&–—-]+/g, ' ');
+  const KNOWN_SUBHEADS = [
+    'the customer had a fair question',
+    'what as is actually means in the buying process',
+    'the original chevrolet powertrain warranty was already gone by mileage',
+    'an inspection is a snapshot not a promise about the future',
+    'gm has published transmission diagnostic guidance for certain conditions',
+    'gm has published transmission diagnostic guidance for certain suburbans',
+    'the customer actually did several things right',
+    'the trade off payment vs protection',
+    'the finance presentation was really a risk decision',
+    'the lowest out the door number can still become an expensive ownership decision',
+    'then the repair bill became a dealership problem',
+    'more than 10 000 miles changes the conversation',
+    'the dealership still had a choice',
+    'eventually the temperature came down',
+    'dealers need to make this conversation better before delivery',
+    'customers need a different question too',
+    'the bottom line',
+  ];
+  return KNOWN_SUBHEADS.some((k) => norm === k);
+}
+
 function markFromAncestors(node, stopAt) {
   let bold = false;
   let italic = false;
   for (let parent = node.parentElement; parent && parent !== stopAt; parent = parent.parentElement) {
-    const tag = parent.tagName.toLowerCase();
+    const tag = parent.tagName?.toLowerCase() || '';
     const weight = parent.style?.fontWeight || '';
     const style = parent.style?.fontStyle || '';
-    if (tag === 'b' || tag === 'strong' || weight === 'bold' || Number(weight) >= 600) bold = true;
+    if (weight === 'normal' || weight === '400') {
+      // explicitly reset font-weight (common in Google Docs wrappers)
+    } else if (tag === 'b' || tag === 'strong' || weight === 'bold' || Number(weight) >= 600) {
+      bold = true;
+    }
     if (tag === 'i' || tag === 'em' || style === 'italic') italic = true;
   }
   return { bold, italic };
@@ -533,16 +784,22 @@ function tableFromElement(element) {
  */
 export function htmlToSections(html, preserved = new Map()) {
   if (typeof window === 'undefined') return [];
-  const doc = new DOMParser().parseFromString(`<body>${html || ''}</body>`, 'text/html');
+  const cleaned = sanitizeHtmlInput(html);
+  const doc = new DOMParser().parseFromString(`<body>${cleaned || ''}</body>`, 'text/html');
+  doc.querySelectorAll('style, script, meta, link, noscript, head, svg, iframe').forEach((e) => e.remove());
   const sections = [];
   const usedIds = new Set();
 
   const startSection = (label) => {
-    let id = slugifySection(label, `section-${sections.length + 1}`);
+    const cleanLabel = (label || 'Overview').trim();
+    if (sections.length === 1 && sections[0].label.toLowerCase() === 'overview' && cleanLabel.toLowerCase() === 'overview') {
+      return sections[0];
+    }
+    let id = slugifySection(cleanLabel, `section-${sections.length + 1}`);
     let suffix = 2;
-    while (usedIds.has(id)) id = `${slugifySection(label, 'section')}-${suffix++}`;
+    while (usedIds.has(id)) id = `${slugifySection(cleanLabel, 'section')}-${suffix++}`;
     usedIds.add(id);
-    sections.push({ section_id: id, label: label || 'Overview', order: sections.length, blocks: [] });
+    sections.push({ section_id: id, label: cleanLabel, order: sections.length, blocks: [] });
     return sections[sections.length - 1];
   };
 
@@ -557,16 +814,31 @@ export function htmlToSections(html, preserved = new Map()) {
     });
   };
 
-  for (const node of [...doc.body.children]) {
+  const validNodes = [...doc.body.children].filter((n) => !isCssNoise(n.textContent));
+  for (const node of validNodes) {
     const tag = node.tagName.toLowerCase();
     const text = node.textContent.trim();
+    if (!text && !node.querySelector('img') && tag !== 'table') continue;
 
-    if (tag === 'h1' || tag === 'h2') {
-      if (text) startSection(text);
+    const normUpper = normalizeMarker(text);
+    if (
+      normUpper.startsWith('ADMIN SOURCE RECORDS') ||
+      normUpper.startsWith('SOURCES METHODOLOGY') ||
+      normUpper === 'SOURCES' ||
+      normUpper.startsWith('SOURCES AND METHODOLOGY') ||
+      normUpper.startsWith('RELATED NEXT DECISION') ||
+      normUpper.startsWith('BENCHMARK IMPORT') ||
+      normUpper.startsWith('REQUIRED LIVE PROOF')
+    ) {
+      break;
+    }
+
+    if (tag === 'h1' || tag === 'h2' || isDecisionSection(text)) {
+      startSection(text);
       continue;
     }
-    if (tag === 'h3' || tag === 'h4') {
-      if (text) pushBlock({ kind: 'heading', type: 'heading', text });
+    if (tag === 'h3' || tag === 'h4' || isKnownSubheading(text) || (looksLikeHeading(text) && entirelyBold(node))) {
+      pushBlock({ kind: 'heading', type: 'heading', text });
       continue;
     }
     if (tag === 'p') {
@@ -580,7 +852,6 @@ export function htmlToSections(html, preserved = new Map()) {
         });
         continue;
       }
-      if (!text) continue;
       const runs = runsFromElement(node);
       // Client Quote style often arrives as <p><b><i>…</i></b></p>, not <blockquote>.
       if (isQuoteParagraph(node)) {
@@ -607,9 +878,6 @@ export function htmlToSections(html, preserved = new Map()) {
       continue;
     }
     if (tag === 'blockquote') {
-      if (!text) continue;
-      // Word's Quote style arrives as a blockquote and is a pull quote, not a
-      // callout: a callout is an editor-authored aside and carries its own title.
       const runs = runsFromElement(node);
       pushBlock({ kind: 'quote', type: 'quote', text, ...(runs.length ? { text_runs: runs } : {}) });
       continue;
@@ -628,7 +896,7 @@ export function htmlToSections(html, preserved = new Map()) {
       });
       continue;
     }
-    if (text) pushBlock({ kind: 'paragraph', type: 'paragraph', text });
+    pushBlock({ kind: 'paragraph', type: 'paragraph', text });
   }
 
   // Re-attach modules the editor cannot express (sources, related, Decide First).

@@ -101,8 +101,8 @@ export default function ArticlePreviewModal({ article, onClose }) {
   const hero = heroRaw ? normalizeMediaUrl(heroRaw) : '';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="au-dash-modal w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col my-8">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="au-dash-modal w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col my-auto border border-white/20 bg-[#080c18] shadow-2xl rounded-2xl">
         <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.1)] flex-shrink-0">
           <div>
             <h3 className="au-dash-card-title">Article preview</h3>
