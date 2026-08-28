@@ -1335,59 +1335,62 @@ export default function ArticlesTab() {
 
       {/* Lifecycle Actions Modal */}
       {lifecycleModalArticle && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
-          <div className="au-dash-card max-w-xl w-full max-h-[92vh] overflow-y-auto p-5 sm:p-7 rounded-2xl shadow-2xl border border-white/20 bg-[#080c18] space-y-6 my-auto text-white">
-            <div className="flex justify-between items-start gap-3 pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div
+            className="w-full max-w-[540px] max-h-[90vh] overflow-y-auto p-6 rounded-2xl shadow-2xl border border-white/15 bg-gradient-to-b from-[#0f172a] to-[#090d16] space-y-5 my-auto text-white"
+            style={{ maxWidth: '540px' }}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-start gap-4 pb-4 border-b border-white/10">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 rounded text-[11px] font-bold tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
-                    Workflow & Lifecycle
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold tracking-wide bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                    Article Actions
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider ${
+                      lifecycleModalArticle.status === 'published'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : lifecycleModalArticle.status === 'approved'
+                          ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
+                          : lifecycleModalArticle.status === 'in_review'
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                            : lifecycleModalArticle.status === 'scheduled'
+                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                              : lifecycleModalArticle.status === 'archived' || lifecycleModalArticle.status === 'unpublished'
+                                ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    }`}
+                  >
+                    {lifecycleModalArticle.status}
                   </span>
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-white leading-snug truncate" title={lifecycleModalArticle.title}>
+                <h3 className="text-base sm:text-lg font-bold text-white leading-snug line-clamp-2" title={lifecycleModalArticle.title}>
                   {lifecycleModalArticle.title}
                 </h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5 truncate">/{lifecycleModalArticle.slug}</p>
+                <p className="text-xs text-slate-400 font-mono mt-1 truncate">/{lifecycleModalArticle.slug}</p>
               </div>
               <button
                 onClick={() => setLifecycleModalArticle(null)}
-                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
                 aria-label="Close modal"
               >
                 <FaTimes className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Stepper / Status Indicator */}
-            <div className="bg-white/[0.04] border border-white/10 p-4 sm:p-5 rounded-xl space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400 font-medium">Current Lifecycle State:</span>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    lifecycleModalArticle.status === 'published'
-                      ? 'bg-green-500/20 text-green-300 border border-green-500/40'
-                      : lifecycleModalArticle.status === 'approved'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : lifecycleModalArticle.status === 'in_review'
-                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                          : lifecycleModalArticle.status === 'scheduled'
-                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
-                            : lifecycleModalArticle.status === 'archived' || lifecycleModalArticle.status === 'unpublished'
-                              ? 'bg-red-500/20 text-red-300 border border-red-500/40'
-                              : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'
-                  }`}
-                >
-                  {lifecycleModalArticle.status}
-                </span>
+            {/* Stage Progress Bar */}
+            <div className="bg-black/30 border border-white/5 p-4 rounded-xl space-y-2.5">
+              <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
+                <span>Lifecycle Flow</span>
+                <span className="text-slate-300 capitalize">{lifecycleModalArticle.status.replace('_', ' ')}</span>
               </div>
-
-              {/* Progress Steps */}
-              <div className="grid grid-cols-4 gap-2 pt-2">
+              <div className="grid grid-cols-4 gap-2">
                 {[
-                  { key: 'draft', label: '1. Draft' },
-                  { key: 'in_review', label: '2. Review' },
-                  { key: 'approved', label: '3. Approved' },
-                  { key: 'published', label: '4. Live' },
+                  { key: 'draft', label: 'Draft' },
+                  { key: 'in_review', label: 'Review' },
+                  { key: 'approved', label: 'Approved' },
+                  { key: 'published', label: 'Live' },
                 ].map((step, idx) => {
                   const statusOrder = { draft: 1, revision_requested: 1, in_review: 2, approved: 3, scheduled: 3, published: 4, updated: 4 };
                   const currentLevel = statusOrder[lifecycleModalArticle.status] || 1;
@@ -1395,17 +1398,17 @@ export default function ArticlesTab() {
                   const isDone = currentLevel >= stepLevel;
                   const isCurrent = currentLevel === stepLevel;
                   return (
-                    <div key={step.key} className="text-center">
+                    <div key={step.key} className="space-y-1.5 text-center">
                       <div
-                        className={`h-2 rounded-full mb-1.5 transition-all ${
+                        className={`h-1.5 rounded-full transition-all ${
                           isDone
-                            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-sm shadow-indigo-500/50'
+                            ? 'bg-indigo-500 shadow-sm shadow-indigo-500/50'
                             : 'bg-white/10'
                         }`}
                       />
                       <span
-                        className={`text-[11px] block truncate transition-colors ${
-                          isCurrent ? 'text-indigo-300 font-bold' : isDone ? 'text-slate-200 font-medium' : 'text-slate-500'
+                        className={`text-[11px] block truncate font-medium ${
+                          isCurrent ? 'text-indigo-300 font-bold' : isDone ? 'text-slate-200' : 'text-slate-500'
                         }`}
                       >
                         {step.label}
@@ -1416,195 +1419,165 @@ export default function ArticlesTab() {
               </div>
             </div>
 
-            {/* Next Recommended Workflow Action */}
+            {/* Primary Workflow Actions */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Recommended Stage Action
-              </label>
+              <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Status Actions
+              </div>
 
               {(lifecycleModalArticle.status === 'draft' || lifecycleModalArticle.status === 'revision_requested') && (
-                <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 space-y-3">
-                  <p className="text-xs sm:text-sm text-blue-200">
-                    Draft is ready for quality review. Submit this article to move it to <strong>In Review</strong>.
-                  </p>
+                <button
+                  onClick={() => {
+                    handleSubmitReview(lifecycleModalArticle._id);
+                    setLifecycleModalArticle(null);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/25"
+                >
+                  <FaPaperPlane className="w-3.5 h-3.5" />
+                  Submit for Editorial Review
+                </button>
+              )}
+
+              {lifecycleModalArticle.status === 'in_review' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     onClick={() => {
-                      handleSubmitReview(lifecycleModalArticle._id);
+                      handleApprove(lifecycleModalArticle._id);
                       setLifecycleModalArticle(null);
                     }}
-                    className="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30"
+                    className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/25"
                   >
-                    <FaPaperPlane className="w-3.5 h-3.5" />
-                    Submit for Review
+                    <FaCheckCircle className="w-4 h-4" />
+                    Approve Article
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleRequestRevision(lifecycleModalArticle._id);
+                      setLifecycleModalArticle(null);
+                    }}
+                    className="py-2.5 px-4 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                  >
+                    <FaUndo className="w-4 h-4" />
+                    Request Changes
                   </button>
                 </div>
               )}
 
-              {lifecycleModalArticle.status === 'in_review' && (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-3">
-                  <p className="text-xs sm:text-sm text-emerald-200">
-                    Article is under editorial review. Approve it for publication or request changes from the author.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <button
-                      onClick={() => {
-                        handleApprove(lifecycleModalArticle._id);
-                        setLifecycleModalArticle(null);
-                      }}
-                      className="py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/30"
-                    >
-                      <FaCheckCircle className="w-4 h-4" />
-                      Approve Article
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleRequestRevision(lifecycleModalArticle._id);
-                        setLifecycleModalArticle(null);
-                      }}
-                      className="py-2.5 px-4 rounded-lg bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-500/40 text-yellow-300 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
-                    >
-                      <FaUndo className="w-4 h-4" />
-                      Request Revision
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {lifecycleModalArticle.status === 'approved' && (
-                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 space-y-3">
-                  <p className="text-xs sm:text-sm text-green-200">
-                    Article has passed editorial review. You can publish immediately or schedule for a future date.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <button
-                      onClick={() => {
-                        handlePublish(lifecycleModalArticle._id);
-                        setLifecycleModalArticle(null);
-                      }}
-                      className="py-2.5 px-4 rounded-lg bg-green-600 hover:bg-green-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-600/30"
-                    >
-                      <FaPaperPlane className="w-4 h-4" />
-                      Publish Now
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleSchedule(lifecycleModalArticle._id);
-                        setLifecycleModalArticle(null);
-                      }}
-                      className="py-2.5 px-4 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
-                    >
-                      <FaCalendarAlt className="w-4 h-4" />
-                      Schedule
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {lifecycleModalArticle.status === 'scheduled' && (
-                <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 space-y-3">
-                  <p className="text-xs sm:text-sm text-purple-200">
-                    Article is queued to publish. You can override and publish right now.
-                  </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     onClick={() => {
                       handlePublish(lifecycleModalArticle._id);
                       setLifecycleModalArticle(null);
                     }}
-                    className="w-full py-2.5 px-4 rounded-lg bg-green-600 hover:bg-green-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-600/30"
+                    className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/25"
                   >
                     <FaPaperPlane className="w-4 h-4" />
-                    Publish Immediately
+                    Publish Now
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleSchedule(lifecycleModalArticle._id);
+                      setLifecycleModalArticle(null);
+                    }}
+                    className="py-2.5 px-4 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                  >
+                    <FaCalendarAlt className="w-4 h-4" />
+                    Schedule
                   </button>
                 </div>
+              )}
+
+              {lifecycleModalArticle.status === 'scheduled' && (
+                <button
+                  onClick={() => {
+                    handlePublish(lifecycleModalArticle._id);
+                    setLifecycleModalArticle(null);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/25"
+                >
+                  <FaPaperPlane className="w-4 h-4" />
+                  Publish Immediately
+                </button>
               )}
 
               {(lifecycleModalArticle.status === 'published' || lifecycleModalArticle.status === 'updated') && (
-                <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 space-y-3">
-                  <p className="text-xs sm:text-sm text-yellow-200">
-                    Article is live on the public site. Unpublishing will make it private and remove it from search engines.
-                  </p>
-                  <button
-                    onClick={() => {
-                      handleUnpublish(lifecycleModalArticle._id);
-                      setLifecycleModalArticle(null);
-                    }}
-                    className="w-full py-2.5 px-4 rounded-lg bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-500/40 text-yellow-300 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
-                  >
-                    <FaTimesCircle className="w-4 h-4" />
-                    Unpublish Article
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    handleUnpublish(lifecycleModalArticle._id);
+                    setLifecycleModalArticle(null);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/35 text-amber-300 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                >
+                  <FaTimesCircle className="w-4 h-4" />
+                  Unpublish to Draft
+                </button>
               )}
             </div>
 
-            {/* Quick Inspection & Tools */}
+            {/* Quick Actions / Inspection */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Inspection & Tools
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Tools & Preview
+              </div>
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => {
                     openEditForm(lifecycleModalArticle);
                     setLifecycleModalArticle(null);
                   }}
-                  className="py-2.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all border border-white/10 shadow-sm"
+                  className="py-2.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-slate-200 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-white/5"
                 >
                   <FaEdit className="w-3.5 h-3.5 text-blue-400" />
-                  Edit Content
+                  Edit
                 </button>
                 <button
                   onClick={() => {
                     handlePreview(lifecycleModalArticle._id);
                     setLifecycleModalArticle(null);
                   }}
-                  className="py-2.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all border border-white/10 shadow-sm"
+                  className="py-2.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-slate-200 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-white/5"
                 >
                   <FaEye className="w-3.5 h-3.5 text-slate-400" />
-                  Live Preview
+                  Preview
                 </button>
                 <button
                   onClick={() => {
                     handleAudit(lifecycleModalArticle._id);
                     setLifecycleModalArticle(null);
                   }}
-                  className="py-2.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all border border-white/10 shadow-sm"
+                  className="py-2.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-slate-200 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-white/5"
                 >
                   <FaHistory className="w-3.5 h-3.5 text-indigo-400" />
-                  Audit Log
+                  Audit
                 </button>
               </div>
             </div>
 
             {/* Danger Zone */}
-            <div className="pt-3 border-t border-white/10 space-y-2">
-              <label className="block text-xs font-semibold text-red-400/90 uppercase tracking-wider">
-                Record Management
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {lifecycleModalArticle.status !== 'archived' && (
-                  <button
-                    onClick={() => {
-                      handleArchive(lifecycleModalArticle._id);
-                      setLifecycleModalArticle(null);
-                    }}
-                    className="py-2.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.12] text-slate-300 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all border border-white/10"
-                  >
-                    <FaBoxArchive className="w-3.5 h-3.5 text-slate-400" />
-                    Archive Record
-                  </button>
-                )}
+            <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+              {lifecycleModalArticle.status !== 'archived' && (
                 <button
                   onClick={() => {
-                    handleDelete(lifecycleModalArticle);
+                    handleArchive(lifecycleModalArticle._id);
                     setLifecycleModalArticle(null);
                   }}
-                  className="py-2.5 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-all"
+                  className="py-2 px-3.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-all"
                 >
-                  <FaTrash className="w-3.5 h-3.5 text-red-400" />
-                  Delete Permanently
+                  <FaBoxArchive className="w-3.5 h-3.5" />
+                  Archive
                 </button>
-              </div>
+              )}
+              <button
+                onClick={() => {
+                  handleDelete(lifecycleModalArticle);
+                  setLifecycleModalArticle(null);
+                }}
+                className="py-2 px-3.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium flex items-center gap-1.5 transition-all"
+              >
+                <FaTrash className="w-3.5 h-3.5" />
+                Delete
+              </button>
             </div>
           </div>
         </div>
