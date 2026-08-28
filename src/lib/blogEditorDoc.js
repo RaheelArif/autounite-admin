@@ -374,19 +374,78 @@ function looksLikeHeading(text) {
   return !/[.?!,;]$/.test(text);
 }
 
+function isHeading2Node(node) {
+  if (!node) return false;
+  const tag = node.tagName?.toLowerCase() || '';
+  const text = node.textContent?.trim() || '';
+  if (!text) return false;
+
+  if (tag === 'h2' || tag === 'h1') return true;
+  if (/^heading\s*2\s*:/i.test(text) || /^##\s+/i.test(text)) return true;
+
+  const className = String(node.className || '').toLowerCase();
+  if (className.includes('msoheading2') || className.includes('heading2') || className.includes('heading-2')) {
+    return true;
+  }
+  if (className.includes('msoheading1') || className.includes('heading1') || className.includes('heading-1')) {
+    return true;
+  }
+
+  if (isDecisionSection(text)) return true;
+
+  if (tag === 'p') {
+    if (isQuoteParagraph(node)) return false;
+    if (isHeading3Node(node)) return false;
+    if (looksLikeHeading(text) && entirelyBold(node)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isHeading3Node(node) {
+  if (!node) return false;
+  const tag = node.tagName?.toLowerCase() || '';
+  const text = node.textContent?.trim() || '';
+  if (!text) return false;
+
+  if (tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') return true;
+  if (/^heading\s*3\s*:/i.test(text) || /^###\s+/i.test(text)) return true;
+
+  const className = String(node.className || '').toLowerCase();
+  if (className.includes('msoheading3') || className.includes('heading3') || className.includes('heading-3')) {
+    return true;
+  }
+
+  if (isKnownSubheading(text)) return true;
+
+  return false;
+}
+
+function cleanHeadingLabel(text) {
+  return String(text || '')
+    .replace(/^heading\s*[23]\s*:\s*/i, '')
+    .replace(/^#{1,4}\s+/, '')
+    .trim();
+}
+
 export function promoteBoldHeadings(html) {
   if (typeof window === 'undefined' || !html) return html;
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
-  if (doc.body.querySelector('h1, h2')) return html;
 
-  for (const paragraph of [...doc.body.querySelectorAll('p')]) {
+  for (const paragraph of [...doc.body.querySelectorAll('p, div')]) {
     const text = paragraph.textContent.trim();
-    // Word Quote style pastes as italic — never promote those into section headings.
     if (isQuoteParagraph(paragraph)) continue;
-    if (!looksLikeHeading(text) || !entirelyBold(paragraph)) continue;
-    const heading = doc.createElement('h2');
-    heading.textContent = text;
-    paragraph.replaceWith(heading);
+    if (isHeading2Node(paragraph)) {
+      const heading = doc.createElement('h2');
+      heading.textContent = cleanHeadingLabel(text);
+      paragraph.replaceWith(heading);
+    } else if (isHeading3Node(paragraph)) {
+      const heading = doc.createElement('h3');
+      heading.textContent = cleanHeadingLabel(text);
+      paragraph.replaceWith(heading);
+    }
   }
   return doc.body.innerHTML;
 }
@@ -791,7 +850,16 @@ export function htmlToSections(html, preserved = new Map()) {
   const usedIds = new Set();
 
   const startSection = (label) => {
-    const cleanLabel = (label || 'Overview').trim();
+    const cleanLabel = cleanHeadingLabel(label || 'Overview').trim();
+    // If we only have an initial Overview section with no blocks yet, adopt this first heading as section 1
+    if (sections.length === 1 && sections[0].label.toLowerCase() === 'overview' && sections[0].blocks.length === 0) {
+      const id = slugifySection(cleanLabel, 'section-1');
+      sections[0].label = cleanLabel;
+      sections[0].section_id = id;
+      usedIds.clear();
+      usedIds.add(id);
+      return sections[0];
+    }
     if (sections.length === 1 && sections[0].label.toLowerCase() === 'overview' && cleanLabel.toLowerCase() === 'overview') {
       return sections[0];
     }
@@ -833,12 +901,12 @@ export function htmlToSections(html, preserved = new Map()) {
       break;
     }
 
-    if (tag === 'h1' || tag === 'h2' || isDecisionSection(text)) {
+    if (isHeading2Node(node)) {
       startSection(text);
       continue;
     }
-    if (tag === 'h3' || tag === 'h4' || isKnownSubheading(text) || (looksLikeHeading(text) && entirelyBold(node))) {
-      pushBlock({ kind: 'heading', type: 'heading', text });
+    if (isHeading3Node(node)) {
+      pushBlock({ kind: 'heading', type: 'heading', text: cleanHeadingLabel(text) });
       continue;
     }
     if (tag === 'p') {

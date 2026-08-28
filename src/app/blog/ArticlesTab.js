@@ -1016,47 +1016,72 @@ export default function ArticlesTab() {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium au-dash-text-muted mb-1">Hero Image</label>
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        const row = approvedMedia.find((item) => item._id === e.target.value);
-                        if (!row) return;
-                        setFormData((p) => ({
-                          ...p,
-                          hero_image_url: normalizeMediaUrl(row.url),
-                          hero_image_alt: p.hero_image_alt || row.alt || '',
-                        }));
-                      }}
-                      className="au-dash-input mb-2"
-                    >
-                      <option value="">Pick approved media…</option>
-                      {approvedMedia.map((row) => (
-                        <option key={row._id} value={row._id}>
-                          {row.kind} — {row.alt || row.media_id}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="url"
-                      value={formData.hero_image_url}
-                      onChange={(e) => setFormData((p) => ({ ...p, hero_image_url: e.target.value }))}
-                      onBlur={(e) =>
-                        setFormData((p) => ({ ...p, hero_image_url: normalizeMediaUrl(e.target.value) }))
-                      }
-                      placeholder="Or paste Drive link / image URL"
-                      className="au-dash-input placeholder-slate-500"
-                    />
-                    {formData.hero_image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={normalizeMediaUrl(formData.hero_image_url)}
-                        alt={formData.hero_image_alt || 'Hero preview'}
-                        className="mt-2 max-h-32 rounded object-contain bg-black/30"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-2.5 rounded-xl border border-white/10 bg-black/40 custom-scrollbar">
+                        {approvedMedia.map((row) => {
+                          const normUrl = normalizeMediaUrl(row.url);
+                          const isSelected = formData.hero_image_url === normUrl;
+                          return (
+                            <button
+                              key={row._id}
+                              type="button"
+                              onClick={() => {
+                                setFormData((p) => ({
+                                  ...p,
+                                  hero_image_url: normUrl,
+                                  hero_image_alt: p.hero_image_alt || row.alt || '',
+                                }));
+                              }}
+                              className={`group relative text-left rounded-lg overflow-hidden border p-1 transition-all ${
+                                isSelected
+                                  ? 'border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-950/40'
+                                  : 'border-white/10 hover:border-white/30 bg-white/[0.02]'
+                              }`}
+                            >
+                              <div className="aspect-video w-full rounded bg-black/50 overflow-hidden relative">
+                                <img
+                                  src={normUrl}
+                                  alt={row.alt || row.media_id || ''}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                              <p className="text-[11px] font-medium text-slate-300 truncate mt-1 px-0.5">
+                                {row.alt || row.media_id || 'Media'}
+                              </p>
+                              <span className="text-[10px] text-slate-500 uppercase tracking-wider px-0.5">
+                                {row.kind}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <input
+                        type="url"
+                        value={formData.hero_image_url}
+                        onChange={(e) => setFormData((p) => ({ ...p, hero_image_url: e.target.value }))}
+                        onBlur={(e) =>
+                          setFormData((p) => ({ ...p, hero_image_url: normalizeMediaUrl(e.target.value) }))
+                        }
+                        placeholder="Or paste Drive link / direct image URL"
+                        className="au-dash-input placeholder-slate-500"
                       />
-                    ) : null}
+                      {formData.hero_image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <div className="relative inline-block mt-1">
+                          <img
+                            src={normalizeMediaUrl(formData.hero_image_url)}
+                            alt={formData.hero_image_alt || 'Hero preview'}
+                            className="max-h-32 rounded-lg object-contain bg-black/50 border border-white/15 shadow-md"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium au-dash-text-muted mb-1">Hero Image Alt</label>
@@ -1127,43 +1152,63 @@ export default function ArticlesTab() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium au-dash-text-muted mb-1">OG Image</label>
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        const row = approvedMedia.find((item) => item._id === e.target.value);
-                        if (!row) return;
-                        setFormData((p) => ({
-                          ...p,
-                          seo: { ...p.seo, og_image_url: normalizeMediaUrl(row.url) },
-                        }));
-                      }}
-                      className="au-dash-input mb-2"
-                    >
-                      <option value="">Pick approved media…</option>
-                      {approvedMedia.map((row) => (
-                        <option key={row._id} value={row._id}>
-                          {row.kind} — {row.alt || row.media_id}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="url"
-                      value={formData.seo.og_image_url}
-                      onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          seo: { ...p.seo, og_image_url: e.target.value },
-                        }))
-                      }
-                      onBlur={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          seo: { ...p.seo, og_image_url: normalizeMediaUrl(e.target.value) },
-                        }))
-                      }
-                      placeholder="Or paste Drive link / image URL"
-                      className="au-dash-input placeholder-slate-500"
-                    />
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-40 overflow-y-auto p-2 rounded-xl border border-white/10 bg-black/40 custom-scrollbar">
+                        {approvedMedia.map((row) => {
+                          const normUrl = normalizeMediaUrl(row.url);
+                          const isSelected = formData.seo.og_image_url === normUrl;
+                          return (
+                            <button
+                              key={row._id}
+                              type="button"
+                              onClick={() => {
+                                setFormData((p) => ({
+                                  ...p,
+                                  seo: { ...p.seo, og_image_url: normUrl },
+                                }));
+                              }}
+                              className={`group relative text-left rounded-lg overflow-hidden border p-1 transition-all ${
+                                isSelected
+                                  ? 'border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-950/40'
+                                  : 'border-white/10 hover:border-white/30 bg-white/[0.02]'
+                              }`}
+                            >
+                              <div className="aspect-video w-full rounded bg-black/50 overflow-hidden relative">
+                                <img
+                                  src={normUrl}
+                                  alt={row.alt || row.media_id || ''}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                              <p className="text-[11px] font-medium text-slate-300 truncate mt-1 px-0.5">
+                                {row.alt || row.media_id || 'Media'}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <input
+                        type="url"
+                        value={formData.seo.og_image_url}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            seo: { ...p.seo, og_image_url: e.target.value },
+                          }))
+                        }
+                        onBlur={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            seo: { ...p.seo, og_image_url: normalizeMediaUrl(e.target.value) },
+                          }))
+                        }
+                        placeholder="Or paste Drive link / image URL"
+                        className="au-dash-input placeholder-slate-500"
+                      />
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium au-dash-text-muted mb-1">Meta Description</label>
