@@ -338,6 +338,10 @@ export default function ArticlesTab() {
           'Cinematic AutoUnite newsletter hero showing a black Chevrolet Suburban outside a dealership service entrance at dusk while two men review repair paperwork. Large text reads: “90,000 MILES. EIGHT MONTHS LATER, IT NEEDED A TRANSMISSION.” Supporting text reads: “The customer got the out-the-door number he wanted. The repair risk was a separate decision.” The official AutoUnite mark appears at bottom right.';
       }
 
+      if (m.socialImageAlt) {
+        next.seo.og_image_alt = m.socialImageAlt;
+      }
+
       if (m.contentType) {
         const match = ARTICLE_TYPES.find(
           (row) => row.value === m.contentType.toLowerCase() || row.label.toLowerCase() === m.contentType.toLowerCase(),

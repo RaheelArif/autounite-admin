@@ -1,9 +1,9 @@
 # AutoUnite Blog OS — Universal Writer Template v1.0
 *Canonical authoring format for Word, Google Docs and structured text*
 
-> **Kenny:** The story itself can be any length or Blog type. Please keep this outer structure consistent so Admin OS can import metadata, Decide First, article sections, links, tables, sources and related content without manual restructuring.
+> **Kenny:** The story itself can be any length or Blog type. Please keep this outer structure consistent so Admin OS can import metadata, Decide First, article sections, links, tables, sources and related content without manual restructuring. Inside `ARTICLE BODY`, the story stays flexible based on the content type and what the article actually needs.
 
-This is the canonical Blog OS authoring format, verified against the current importer test set for DOCX, Google Docs and structured text/Markdown. Following this structure is the verified canonical path for one-click import into **Admin OS > Content**.
+This is the canonical authoring contract for AutoUnite Blog OS articles, establishing a predictable import envelope for Word (.docx), Google Docs, and structured text/Markdown into **Admin OS > Content**.
 
 ---
 
@@ -68,7 +68,7 @@ Quote style:
 [Important customer takeaway, rule of thumb, or key quote formatted as a pull quote.]
 
 
-Heading 2: [First Major Decision Section Name]
+Heading 2: [First Decision Section Name]
 
 [Body copy discussing paperwork, facts, or numbers.]
 
@@ -78,14 +78,14 @@ Things worth checking include:
 • Bullet point 2 with key takeaways
 • Bullet point 3 with **bold emphasis words**
 
-Heading 3: [In-Article Subheading Here]
+Heading 3: [Optional Subheading Here]
 
 [Subheading copy explaining a specific nuance. This does not clutter the table of contents.]
 
 [Example of inline link: Readers can review federal rules directly at the FTC Guide (https://www.ftc.gov/business-guidance/resources/dealers-guide-used-car-rule).]
 
 
-Heading 2: [Second Major Decision Section Name]
+Heading 2: [Second Decision Section Name]
 
 [Body copy introducing a comparison or breakdown.]
 
@@ -95,25 +95,9 @@ Heading 2: [Second Major Decision Section Name]
 | Total OTD | Complete amount required to purchase | What is the final out-the-door number? |
 
 
-Heading 2: [Third Major Decision Section Name]
+Heading 2: [Additional Section or Final Decision Check]
 
-[Body paragraphs...]
-
-
-Heading 2: What to Decide Before [Signing / Buying / Delivery]
-
-[Actionable decision checklist and final verification before completing transaction.]
-
-1. First decision question to confirm
-2. Second decision question to confirm
-3. Third decision question to confirm
-
-Heading 3: The Bottom Line
-
-[Concluding synthesis and final summary of the lesson.]
-
-Decide first.
-Submit later.
+[Body paragraphs, decision checklist, or concluding thoughts tailored to the story.]
 
 
 ADMIN SOURCE RECORDS — PARSE AS SOURCE DATA, NOT ARTICLE BODY
@@ -146,7 +130,7 @@ END OF BLOG ARTICLE PACKAGE
 
 Every field in the `ADMIN METADATA` table maps directly to Admin OS form inputs:
 
-| Field Name | Accepted Values / Format | Description | Required? |
+| Field Name | Accepted Values / Format | Description & Resolution Rule | Required? |
 | :--- | :--- | :--- | :--- |
 | **H1** | Text | The main headline displayed on the article page and card. | **Yes** |
 | **SEO title** | `[Title] \| AutoUnite` | Custom `<title>` meta tag for search engines. | Optional |
@@ -154,11 +138,11 @@ Every field in the `ADMIN METADATA` table maps directly to Admin OS form inputs:
 | **Meta** | 150–160 chars | Meta description used by Google and social share cards. | Optional |
 | **Category** | `Buying`, `Money`, `Market`, `Ownership` | Primary category. AutoUnite uses 4 locked categories. | **Compulsory** |
 | **Content type** | `Article`, `Guide`, `Explainer`, `Newsletter`, `Insight` | Story format type. Locked to canonical 5 types. | **Yes** |
-| **Author** | `Kenny Smith` | Author profile assigned to the post. | **Yes** |
+| **Author** | `Kenny Smith` | Author name. Automatically resolves to verified `authorId` in Admin OS. | **Yes** |
 | **Tags** | Comma-separated | 3 to 6 search and filtering tags. | **Yes** |
 | **Excerpt / Deck** | 1–2 sentences | Subtitle summary appearing under the headline. | Optional |
 | **Read time** | `5 min` / `8 min` | Estimated reading duration in minutes. | Auto / Recalculated |
-| **Hero file** | `Hero.png` or `None` | Topic-relevant hero image filename. | Optional |
+| **Hero file** | `Hero.png` or `None` | Hero filename. Resolves to approved `featuredMediaId` via media approval gate. | Optional |
 | **Hero alt** | Descriptive sentence | Accessibility & SEO alt text. | **Required when Hero exists** |
 | **Social image file** | `Blog Social Image.png` or `None` | Social / OG share image filename. | Optional |
 | **Social image alt** | Descriptive sentence | Accessibility alt text for Twitter/LinkedIn share cards. | **Required when Social image file exists** |
@@ -173,8 +157,9 @@ Every field in the `ADMIN METADATA` table maps directly to Admin OS form inputs:
 ### A. Headings & On This Page (TOC) Navigation
 The Blog OS automatically builds the sticky **On This Page (TOC)** sidebar rail from your headings:
 - **`H1` / Article Headline:** Appears only once at the very top.
-- **`H2` / `Heading 2: [Title]`:** Becomes an **On This Page (TOC) Rail Anchor**. Target **5 to 8** main decision sections per article. Keep them concise (e.g. `Overview`, `Start With the Amount Financed`, `What to Decide Before Signing`).
+- **`H2` / `Heading 2: [Title]`:** Becomes an **On This Page (TOC) Rail Anchor**. 5 to 8 main decision sections is recommended *guidance*, not a rigid constraint—short guides, explainers, and newsletters can have fewer or more sections as the story requires.
 - **`H3` / `Heading 3: [Title]`:** In-article subheadings. These provide internal structure inside a section **without** cluttering the TOC rail.
+- **Flexible Endings:** Conclusion sections and ending formats are flexible based on the content type and story architecture (Newsletters follow their own ending rules; no mandatory rigid footer tagline required).
 
 ### B. Adding Links (Inline Links)
 You can include links in any paragraph, list, or table.
@@ -213,7 +198,7 @@ Appears at the footer of the article. List each credible external authority:
 - **Method note:** (Optional) Contextual disclaimer clarifying that data/bulletins are illustrative.
 
 ### 3. `RELATED CONTENT` (Recommended Next Reads)
-List 1 to 2 related AutoUnite articles by title and slug. Related content displays only when the target article is Published + Public + Approved. The public resolver rechecks eligibility before rendering.
+List 1 to 2 related AutoUnite articles by title and slug. Slugs automatically resolve to `relatedContentIds` in Admin OS. Related content displays publicly only when the target article is `Published + Public + Approved`.
 
 ---
 
