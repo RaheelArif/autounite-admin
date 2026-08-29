@@ -374,11 +374,58 @@ function looksLikeHeading(text) {
   return !/[.?!,;]$/.test(text);
 }
 
+function isTitleCasedHeading(text) {
+  if (!text) return false;
+  const str = String(text).trim();
+  if (str.length < 3 || str.length > 95) return false;
+  if (/^["'“‘\[(]/.test(str)) return false;
+  // Exclude lines ending with sentence punctuation (. , ; :)
+  if (/[.,;:]$/.test(str)) return false;
+  // Exclude list bullets, numbered items, pipe tables, dividers
+  if (/^([•\-*]|\d+\.|\d+\)|\/|\|)/.test(str)) return false;
+  // Exclude admin markers
+  const upper = str.toUpperCase();
+  if (
+    upper.startsWith('AUTOUNITE') ||
+    upper.startsWith('ADMIN') ||
+    upper.startsWith('DECIDE FIRST') ||
+    upper.startsWith('ARTICLE BODY') ||
+    upper.startsWith('SOURCES') ||
+    upper.startsWith('RELATED') ||
+    upper.startsWith('BENCHMARK') ||
+    upper.startsWith('REQUIRED') ||
+    upper.startsWith('END OF') ||
+    upper.startsWith('METHOD NOTE')
+  ) {
+    return false;
+  }
+  const words = str.split(/\s+/).filter(Boolean);
+  if (words.length < 1 || words.length > 14) return false;
+  
+  const minorWords = new Set([
+    'a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from',
+    'by', 'vs', 'vs.', 'with', 'in', 'of', 'is', 'not', 'too', 'can', 'may', 'be',
+    'as', 'if', 'into', 'out', 'up', 'down', 'over', 'than',
+  ]);
+  let capitalizedCount = 0;
+  for (const w of words) {
+    const cleanW = w.replace(/[^a-zA-Z0-9]/g, '');
+    if (!cleanW) continue;
+    if (minorWords.has(cleanW.toLowerCase()) || /^[A-Z0-9]/.test(cleanW)) {
+      capitalizedCount++;
+    }
+  }
+  return (capitalizedCount / words.length) >= 0.75;
+}
+
 function isHeading2Node(node) {
   if (!node) return false;
   const tag = node.tagName?.toLowerCase() || '';
   const text = node.textContent?.trim() || '';
   if (!text) return false;
+
+  if (tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') return false;
+  if (/^heading\s*3\s*:/i.test(text) || /^###\s+/i.test(text)) return false;
 
   if (tag === 'h2' || tag === 'h1') return true;
   if (/^heading\s*2\s*:/i.test(text) || /^##\s+/i.test(text)) return true;
@@ -391,12 +438,14 @@ function isHeading2Node(node) {
     return true;
   }
 
-  if (isDecisionSection(text)) return true;
-
-  if (tag === 'p') {
+  if (tag === 'p' || tag === 'div') {
     if (isQuoteParagraph(node)) return false;
     if (isHeading3Node(node)) return false;
+    if (isDecisionSection(text)) return true;
     if (looksLikeHeading(text) && entirelyBold(node)) {
+      return true;
+    }
+    if (isTitleCasedHeading(text)) {
       return true;
     }
   }
@@ -437,12 +486,12 @@ export function promoteBoldHeadings(html) {
   for (const paragraph of [...doc.body.querySelectorAll('p, div')]) {
     const text = paragraph.textContent.trim();
     if (isQuoteParagraph(paragraph)) continue;
-    if (isHeading2Node(paragraph)) {
-      const heading = doc.createElement('h2');
+    if (isHeading3Node(paragraph)) {
+      const heading = doc.createElement('h3');
       heading.textContent = cleanHeadingLabel(text);
       paragraph.replaceWith(heading);
-    } else if (isHeading3Node(paragraph)) {
-      const heading = doc.createElement('h3');
+    } else if (isHeading2Node(paragraph)) {
+      const heading = doc.createElement('h2');
       heading.textContent = cleanHeadingLabel(text);
       paragraph.replaceWith(heading);
     }
@@ -460,22 +509,23 @@ function isCssNoise(text) {
 }
 
 export function markdownPipesToTables(text) {
-  if (!text || !text.includes('|')) return text;
+  if (!text) return text;
   const lines = text.split(/\r?\n/);
   const out = [];
   let inTable = false;
   let tableRows = [];
+  let tableDelim = '\t';
 
   const flushTable = () => {
     if (!tableRows.length) return;
     const htmlRows = tableRows
       .map((row) => {
         const cells = row
-          .split('|')
+          .split(tableDelim)
           .map((c) => c.trim())
           .filter((c, idx, arr) => {
             // drop leading/trailing empty cells from outer pipes
-            if ((idx === 0 || idx === arr.length - 1) && !c) return false;
+            if (tableDelim === '|' && (idx === 0 || idx === arr.length - 1) && !c) return false;
             return true;
           });
         if (!cells.length) return '';
@@ -502,15 +552,26 @@ export function markdownPipesToTables(text) {
       // Do not flush the table on header separator lines.
       continue;
     }
-    if (line.includes('|') && !line.startsWith('#') && !line.startsWith('Heading')) {
+    const hasPipe = line.includes('|');
+    const hasTab = line.includes('\t');
+    if ((hasPipe || hasTab) && !line.startsWith('#') && !line.startsWith('Heading')) {
+      const currentDelim = hasTab ? '\t' : '|';
+      if (inTable && tableDelim !== currentDelim) {
+        flushTable();
+      }
       inTable = true;
-      tableRows.push(line);
+      tableDelim = currentDelim;
+      tableRows.push(lines[i]); // preserve tabs
     } else {
       if (inTable) flushTable();
       if (line.startsWith('Heading 2:')) {
         out.push(`<h2>${line.replace(/^Heading 2:\s*/i, '').trim()}</h2>`);
       } else if (line.startsWith('Heading 3:')) {
         out.push(`<h3>${line.replace(/^Heading 3:\s*/i, '').trim()}</h3>`);
+      } else if (/^##\s+/.test(line)) {
+        out.push(`<h2>${line.replace(/^##\s+/, '').trim()}</h2>`);
+      } else if (/^###\s+/.test(line)) {
+        out.push(`<h3>${line.replace(/^###\s+/, '').trim()}</h3>`);
       } else if (line.startsWith('Quote style:')) {
         let quoteText = line.replace(/^Quote style:\s*/i, '').trim();
         if (!quoteText && i + 1 < lines.length) {
@@ -519,6 +580,10 @@ export function markdownPipesToTables(text) {
         if (quoteText) out.push(`<blockquote><p>${quoteText}</p></blockquote>`);
       } else if (/^[•\-*]\s+/.test(line)) {
         out.push(`<ul><li>${line.replace(/^[•\-*]\s+/, '')}</li></ul>`);
+      } else if (isKnownSubheading(line)) {
+        out.push(`<h3>${line}</h3>`);
+      } else if (isTitleCasedHeading(line) && !line.includes('|') && !line.includes('\t')) {
+        out.push(`<h2>${line}</h2>`);
       } else if (line) {
         out.push(`<p>${line}</p>`);
       }
@@ -532,8 +597,9 @@ export function sanitizeHtmlInput(html) {
   if (!html) return '';
   let str = String(html);
 
-  // If text or simple HTML has pipes or markdown styles, normalize breaks and paragraph tags
-  if (str.includes('|') && !str.includes('<table')) {
+  // If text is plain text (no HTML tags) or contains markdown/tab tables
+  const hasHtmlTags = /<\/?(?:p|div|span|h[1-6]|table|ul|ol|li|blockquote|a|b|strong|i|em)[^>]*>/i.test(str);
+  if (!hasHtmlTags || ((str.includes('|') || str.includes('\t')) && !str.includes('<table'))) {
     str = str
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>\s*<p[^>]*>/gi, '\n')
@@ -543,6 +609,12 @@ export function sanitizeHtmlInput(html) {
 
   // Convert markdown links [text](url) to <a> tags if present as plain text/markdown
   str = str.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s\)]+|\/[^\s\)]+)\)/g, '<a href="$2">$1</a>');
+
+  // Convert markdown bold **text** or __text__ to <strong> tags
+  str = str.replace(/(\*\*|__)(?=\S)(.+?)(?<=\S)\1/g, '<strong>$2</strong>');
+
+  // Convert markdown italic *text* or _text_ to <em> tags
+  str = str.replace(/(?<!\*|\w)(\*|_)(?=\S)(.+?)(?<=\S)\1(?!\*|\w)/g, '<em>$2</em>');
 
   str = str
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -738,6 +810,7 @@ function isDecisionSection(text) {
     'the contract may matter more than the sales pitch',
     'what the dealer can verify and what it cannot promise',
     'a better repair conversation',
+    'the bottom line',
   ];
   return KNOWN.some((k) => clean === k || norm === k);
 }
@@ -761,10 +834,10 @@ function isKnownSubheading(text) {
     'eventually the temperature came down',
     'dealers need to make this conversation better before delivery',
     'customers need a different question too',
-    'the bottom line',
     'diagnosis and coverage are different decisions',
     'pre authorization can change the sequence',
     'pre-authorization can change the sequence',
+    'averages flatten the vehicle you are actually shopping',
   ];
   return KNOWN_SUBHEADS.some((k) => norm === k);
 }

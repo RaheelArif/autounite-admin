@@ -6,34 +6,40 @@ import { normalizeMediaUrl } from '@/lib/blogMediaUrl';
 
 function parseInlineMarkdown(text) {
   if (typeof text !== 'string' || !text) return text;
-  const linkRegex = /\[([^\]\n]+)\]\((https?:\/\/[^\s\)]+|\/[^\s\)]+)\)/g;
-  if (!linkRegex.test(text)) return text;
-  linkRegex.lastIndex = 0;
+  const inlineRegex = /\[([^\]\n]+)\]\((https?:\/\/[^\s\)]+|\/[^\s\)]+)\)|(\*\*|__)(?=\S)(.+?)(?<=\S)\3|(?<!\*|\w)(\*|_)(?=\S)(.+?)(?<=\S)\5(?!\*|\w)/g;
+  if (!inlineRegex.test(text)) return text;
+  inlineRegex.lastIndex = 0;
 
   const parts = [];
   let lastIndex = 0;
   let match;
   let key = 0;
 
-  while ((match = linkRegex.exec(text)) !== null) {
+  while ((match = inlineRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       parts.push(text.slice(lastIndex, match.index));
     }
-    const label = match[1];
-    const href = match[2];
-    const external = href && !href.startsWith('/');
-    parts.push(
-      <a
-        key={`md-link-${key++}`}
-        href={href}
-        className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors inline-flex items-center gap-1 font-medium"
-        {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-      >
-        {label}
-        {external ? <FaExternalLinkAlt className="w-2.5 h-2.5 opacity-70" /> : null}
-      </a>
-    );
-    lastIndex = linkRegex.lastIndex;
+    if (match[1] && match[2]) {
+      const label = match[1];
+      const href = match[2];
+      const external = href && !href.startsWith('/');
+      parts.push(
+        <a
+          key={`md-link-${key++}`}
+          href={href}
+          className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors inline-flex items-center gap-1 font-medium"
+          {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        >
+          {label}
+          {external ? <FaExternalLinkAlt className="w-2.5 h-2.5 opacity-70" /> : null}
+        </a>
+      );
+    } else if (match[3] && match[4]) {
+      parts.push(<strong key={`md-b-${key++}`}>{match[4]}</strong>);
+    } else if (match[5] && match[6]) {
+      parts.push(<em key={`md-i-${key++}`}>{match[6]}</em>);
+    }
+    lastIndex = inlineRegex.lastIndex;
   }
   if (lastIndex < text.length) {
     parts.push(text.slice(lastIndex));

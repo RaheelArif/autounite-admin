@@ -297,4 +297,147 @@ assert.equal(pkgWithStyles.meta.title, '90,000 Miles. Eight Months Later, It Nee
 assert.ok(!pkgWithStyles.html.includes('margin: 0.0px'), 'raw CSS is stripped from HTML');
 assert.ok(!pkgWithStyles.meta.title.includes('p.p1'), 'CSS is not treated as title');
 
+// ---------------------------------------------------------------------------
+// Test Package 07 (July Incentives / Market)
+// ---------------------------------------------------------------------------
+const test07Html = readFileSync(fileURLToPath(new URL('./__fixtures__/blog-article-test07.html', import.meta.url)), 'utf8');
+const pkg07 = parsePastedPackage(test07Html);
+assert.equal(pkg07.meta.title, '6.4% Is the Average. Your Vehicle May Be in a Different Market.');
+assert.equal(pkg07.meta.slug, '64-percent-average-your-vehicle-different-market');
+assert.equal(pkg07.sources.length, 4, 'all 4 sources extracted');
+
+const sections07 = htmlToSections(pkg07.html);
+console.log('Test 07 parsed sections count:', sections07.length);
+sections07.forEach((s, idx) => console.log(`   [${idx}]: ${s.label} (${s.blocks.length} blocks)`));
+
+assert.equal(sections07.length, 6, '6 canonical H2 sections');
+assert.equal(sections07[0].label, 'Overview');
+assert.equal(sections07[1].label, 'The Average Is Not the Offer');
+assert.equal(sections07[2].label, 'Inventory Is Moving, Not Just Sitting');
+assert.equal(sections07[3].label, 'Incentive Type Matters Too');
+assert.equal(sections07[4].label, 'Why Two Sources Can Show Different Percentages');
+assert.equal(sections07[5].label, 'What to Research on the Exact Vehicle');
+
+const h3Blocks = sections07.flatMap((s) => s.blocks).filter((b) => b.kind === 'heading');
+assert.equal(h3Blocks.length, 1, '1 Heading 3 block inside parent section');
+assert.equal(h3Blocks[0].text, 'Averages flatten the vehicle you are actually shopping');
+
+const links07 = sections07.flatMap((s) => s.blocks).flatMap((b) => b.text_runs || []).filter((r) => r.href);
+console.log('Test 07 inline body links count:', links07.length);
+links07.forEach((l) => console.log(`   -> ${l.text} => ${l.href}`));
+assert.equal(links07.length, 4, '4 inline body links preserved');
+
+const rawPlainText = `AUTOUNITE BLOG OS ARTICLE
+ADMIN METADATA
+Field	Value
+H1	6.4% Is the Average. Your Vehicle May Be in a Different Market.
+SEO title	Car Incentives Vary by Segment: July 2026 | AutoUnite
+Slug	64-percent-average-your-vehicle-different-market
+Meta	July incentives averaged 6.4% of ATP, while pickups reached 8.6%, compact SUVs 7.8% and midsize SUVs 6.8%. See why averages can mislead.
+Category	Market
+Content type	Insight
+Author	Kenny Smith
+Tags	incentives, new car prices, inventory, days supply, market
+Excerpt / Deck	July 2026 incentive spending averaged 6.4% of ATP. That industry number hides meaningful differences by segment, inventory position, program type and eligibility.
+Read time	7 min
+Hero file	Hero.png
+Hero alt	Dark data-driven market graphic showing July 2026 incentive percentages, with 6.4 percent industry average beside higher full-size pickup, compact SUV and midsize SUV figures.
+Social image file	Blog Social Image.png
+Social image alt	Social market graphic comparing July 2026 industry incentive spending with pickup and SUV segment incentive percentages.
+Original platform	AutoUnite Native
+Original URL	Pending
+Original publish date	Pending
+Updated	Pending
+Last verified	2026-08-28
+Lineage verification	Pending
+LinkedIn URL	Pending
+Medium URL	Pending
+Substack URL	Pending
+Tool handoff	Research
+
+DECIDE FIRST
+Field	Guidance
+What Matters	The industry incentive average is market context, not a quote for the exact vehicle you want. Segment, brand, model, region, eligibility and program type can move the real offer materially.
+Watch This	Do not compare percentages from different sources without checking the denominator and measurement period. An incentive percentage of ATP is not automatically the same measure as a forecast expressed against MSRP.
+Your Next Move	Identify the exact vehicle and segment, check current local inventory, verify the manufacturer program and eligibility, then compare the actual cash or APR choices available today.
+
+ARTICLE BODY
+The headline number for July was 6.4%.
+Kelley Blue Book reported that average new-vehicle incentive spending fell to 6.4% of average transaction price. If you stop there, you can walk into the market expecting every vehicle to behave like the average.
+It does not.
+Overview
+The July market had healthier inventory than the shortage years, but the numbers were moving in different directions at the same time. Cox Automotive reported 2.73 million new vehicles available at the start of August and 75 days of supply. Inventory fell 3.5% from the prior month as July sales increased 8.5% from June.
+July 2026 metric	Value	What it tells you
+Available new vehicles	2.73M	National choice is broad, but supply is not equal by brand or model.
+Days of supply	75	Inventory relative to the recent selling pace, not VIN age.
+Average transaction price	$49,855	National sales-weighted average paid for new vehicles.
+Average incentive spending	6.4% of ATP	Industry average, not a guaranteed discount.
+
+The Cox Automotive July inventory report and Kelley Blue Book July pricing report are talking about the same national market from different angles.
+The Average Is Not the Offer
+The industry average was 6.4% of ATP, but KBB reported higher incentive spending in several major segments.
+Segment	July incentive spending	Difference vs. 6.4% industry average
+Full-size pickups	8.6% of ATP	+2.2 percentage points
+Compact SUVs	7.8% of ATP	+1.4 percentage points
+Midsize SUVs	6.8% of ATP	+0.4 percentage points
+
+That does not mean every full-size pickup had 8.6% off the window sticker. It means the segment-level average incentive spending was higher than the overall industry average.
+Averages flatten the vehicle you are actually shopping
+One brand may have tight supply. Another may be carrying more inventory. One model may have cash support. Another may have a subsidized APR. A loyalty or conquest program may apply to one household and not another.
+Cox specifically noted that Toyota, Lexus and Honda remained among the tightest inventory positions while Stellantis continued working through comparatively elevated supply. That is a clear reminder that a national average cannot price one rooftop or one VIN.
+Inventory Is Moving, Not Just Sitting
+The July inventory number also needs context. Inventory was down 3.5% month over month while sales were up 8.5% from June. Days of supply moved from a revised 82 days at the beginning of July to 75 days entering August.
+Movement	July result	Interpretation
+Inventory	-3.5% month over month	Available units fell.
+Sales	+8.5% from June	Demand absorbed inventory faster.
+Days of supply	82 to 75	Supply tightened relative to sales pace.
+
+Cox's market snapshot defines days of supply using the daily sales rate for the most recent 30-day period. That is useful market context, but it still does not tell you whether the exact VIN on the ground is two days old or 160 days old.
+Incentive Type Matters Too
+A percentage average also hides the form of the incentive.
+Customer cash: a direct reduction when the shopper and vehicle qualify.
+Loyalty or conquest: eligibility tied to current or prior ownership conditions.
+Promotional APR: lower borrowing cost that may replace or interact with a cash offer.
+Model-specific support: a program tied to a particular vehicle, trim, model year or region.
+J.D. Power's July 2026 deals roundup documented that more than half of new-car brands were advertising 0% financing on at least one model in July, while cash, loyalty and conquest offers varied by brand and model. The point is the structure, not a promise that any July offer is still available today.
+Why Two Sources Can Show Different Percentages
+Market research can use different denominators, timing windows and forecast versus completed transaction data. That makes two percentages look contradictory when they are measuring different things.
+For importer testing, this section matters because the Blog renderer needs to preserve the source label, date and surrounding qualification. The system should not flatten every number into one unlabeled statistic.
+What to Research on the Exact Vehicle
+Confirm the exact model, trim, powertrain and model year.
+Check how many real comparables exist locally and how long the exact VIN has been available.
+Verify the manufacturer program for the shopper's region and eligibility on the day of the deal.
+Compare cash and promotional-APR paths using the full transaction, not only the headline discount.
+Use Research when the answer depends on current market conditions rather than carrying July averages forward as if they never change.
+The average is useful. The exact vehicle is where the decision happens.
+ADMIN SOURCE RECORDS - PARSE AS SOURCE DATA, NOT ARTICLE BODY
+Publisher	Reader-facing label	Full URL	Verified date
+Cox Automotive	July New-Vehicle Inventory Declines as Stronger Sales Outpace Replenishment	https://www.coxautoinc.com/insights/july-2026-new-vehicle-inventory/	2026-08-28
+Kelley Blue Book	New-Vehicle Prices Trend Higher in July as Incentives Decline and Sales Pace Slows	https://mediaroom.kbb.com/2026-08-11-Kelley-Blue-Book-Report-New-Vehicle-Prices-Trend-Higher-in-July-as-Incentives-Decline-and-Sales-Pace-Slows	2026-08-28
+Cox Automotive	Auto Market Snapshot	https://www.coxautoinc.com/market-snapshot/	2026-08-28
+J.D. Power	Best Car Deals in July 2026	https://www.jdpower.com/cars/shopping-guides/best-car-deals-in-july-2026	2026-08-28
+
+Method note: Market figures are time-sensitive. This article uses July 2026 national data verified August 28, 2026. Segment averages are not guaranteed discounts on any specific vehicle. Current local programs must be re-verified before a shopper acts.
+RELATED CONTENT - PARSE AS RELATION DATA, NOT ARTICLE BODY
+Title	Article slug
+Inventory Is Back. That Doesn’t Mean Every Deal Is Better.	inventory-is-back-that-doesnt-mean-every-deal-is-better
+How a $32,500 Car Deal Became $39,800	how-a-32500-car-deal-became-39800
+
+END OF BLOG ARTICLE PACKAGE`;
+
+const plainPkg = parsePastedPackage(rawPlainText);
+const plainSections = htmlToSections(plainPkg.html);
+console.log('Plain text paste parsed sections count:', plainSections.length);
+plainSections.forEach((s, idx) => console.log(`   [${idx}]: ${s.label} (${s.blocks.length} blocks)`));
+assert.equal(plainSections.length, 6, 'Plain text paste yields all 6 H2 sections');
+
+// Test markdown bold and italic parsing
+const sampleMd = 'The headline number for July was **6.4%** and *market context*.';
+const mdPkg = parsePastedPackage(`ARTICLE BODY\n${sampleMd}\nEND OF BLOG ARTICLE PACKAGE`);
+const mdSections = htmlToSections(mdPkg.html);
+const pRuns = mdSections[0]?.blocks[0]?.text_runs || [];
+console.log('Markdown runs parsed:', pRuns);
+assert.ok(pRuns.some((r) => r.text === '6.4%' && r.bold), 'Markdown bold parsed to bold run');
+assert.ok(pRuns.some((r) => r.text === 'market context' && r.italic), 'Markdown italic parsed to italic run');
+
 console.log('blogEditorDoc.test.mjs — all OK');
