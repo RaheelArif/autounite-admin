@@ -723,7 +723,7 @@ function mergeRuns(runs) {
 
 function isDecisionSection(text) {
   const norm = String(text || '').trim().toLowerCase().replace(/['"’]/g, '');
-  const clean = norm.replace(/[,\s&]+/g, ' ');
+  const clean = norm.replace(/[,\s&–—-]+/g, ' ');
   const KNOWN = [
     'overview',
     'the customers question',
@@ -732,6 +732,12 @@ function isDecisionSection(text) {
     'purchase price vs ownership risk',
     'responsibility mileage goodwill',
     'what to decide before delivery',
+    'the repair estimate answers only one question',
+    'five paths can start with the same warning light',
+    'start with the vin not the estimate',
+    'the contract may matter more than the sales pitch',
+    'what the dealer can verify and what it cannot promise',
+    'a better repair conversation',
   ];
   return KNOWN.some((k) => clean === k || norm === k);
 }
@@ -756,6 +762,9 @@ function isKnownSubheading(text) {
     'dealers need to make this conversation better before delivery',
     'customers need a different question too',
     'the bottom line',
+    'diagnosis and coverage are different decisions',
+    'pre authorization can change the sequence',
+    'pre-authorization can change the sequence',
   ];
   return KNOWN_SUBHEADS.some((k) => norm === k);
 }

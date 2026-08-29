@@ -173,11 +173,11 @@ export default function MediaTab() {
             onChange={(e) => setForm((p) => ({ ...p, alt: e.target.value }))}
             className="au-dash-input"
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2">
             <select
               value={form.kind}
               onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))}
-              className="au-dash-input"
+              className="au-dash-input flex-1 sm:flex-initial"
             >
               <option value="hero">Hero</option>
               <option value="card">Card</option>
@@ -185,7 +185,7 @@ export default function MediaTab() {
               <option value="inline">Inline</option>
               <option value="other">Other</option>
             </select>
-            <button type="submit" disabled={submitting} className="au-dash-btn flex items-center gap-2">
+            <button type="submit" disabled={submitting} className="au-dash-btn flex items-center justify-center gap-2 whitespace-nowrap">
               {editingId ? (
                 <>
                   <FaCheck className="w-3 h-3" /> Save
@@ -200,7 +200,7 @@ export default function MediaTab() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-3 py-2 rounded-lg bg-white/10 au-dash-text-muted text-sm"
+                className="px-3 py-2 rounded-lg bg-white/10 au-dash-text-muted text-sm whitespace-nowrap"
               >
                 Cancel
               </button>
@@ -233,116 +233,120 @@ export default function MediaTab() {
         {loading ? (
           <div className="p-8 text-center au-dash-text-subtle">Loading media...</div>
         ) : (
-          <table className="w-full">
-            <thead className="au-dash-table-head">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Kind</th>
-                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Alt</th>
-                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">URL</th>
-                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">ID</th>
-                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Approval</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((row) => (
-                <tr key={row._id} className="border-t border-white/10">
-                  <td className="px-4 py-3 au-dash-text">{row.kind}</td>
-                  <td className="px-4 py-3 au-dash-text">{row.alt}</td>
-                  <td className="px-4 py-3 au-dash-text-subtle text-sm max-w-[280px]">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="truncate" title={row.url}>
-                        {row.url}
-                      </span>
-                      {isBrokenDriveEmbedUrl(row.url) && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[780px]">
+              <thead className="au-dash-table-head">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold au-dash-text-muted w-[90px]">Kind</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold au-dash-text-muted min-w-[190px] max-w-[280px]">Alt</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold au-dash-text-muted min-w-[240px]">URL</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold au-dash-text-muted w-[140px]">ID</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold au-dash-text-muted w-[160px]">Approval</th>
+                  <th className="px-4 py-3 text-right w-[150px]" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((row) => (
+                  <tr key={row._id} className="border-t border-white/10 hover:bg-white/[0.03]">
+                    <td className="px-4 py-3 au-dash-text font-medium capitalize">{row.kind}</td>
+                    <td className="px-4 py-3 au-dash-text text-sm min-w-[190px] max-w-[280px]">
+                      <span className="line-clamp-2" title={row.alt}>{row.alt}</span>
+                    </td>
+                    <td className="px-4 py-3 au-dash-text-subtle text-sm min-w-[240px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate max-w-[160px] sm:max-w-[220px]" title={row.url}>
+                          {row.url}
+                        </span>
+                        {isBrokenDriveEmbedUrl(row.url) && (
+                          <button
+                            type="button"
+                            onClick={() => handleFixDriveUrl(row)}
+                            className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-xs"
+                            title="Convert Drive share link to an embeddable image URL"
+                          >
+                            <FaWrench className="w-3 h-3" /> Fix link
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => handleFixDriveUrl(row)}
-                          className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-xs"
-                          title="Convert Drive share link to an embeddable image URL"
+                          onClick={() => handleCopyUrl(row)}
+                          className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-xs ${
+                            copiedId === row._id
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : 'bg-white/10 au-dash-text-muted hover:au-dash-text-strong'
+                          }`}
+                          title="Copy URL for the article form"
                         >
-                          <FaWrench className="w-3 h-3" /> Fix link
+                          {copiedId === row._id ? (
+                            <>
+                              <FaCheck className="w-3 h-3" /> Copied
+                            </>
+                          ) : (
+                            <>
+                              <FaCopy className="w-3 h-3" /> Copy
+                            </>
+                          )}
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleCopyUrl(row)}
-                        className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-xs ${
-                          copiedId === row._id
-                            ? 'bg-emerald-500/20 text-emerald-300'
-                            : 'bg-white/10 au-dash-text-muted hover:au-dash-text-strong'
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 au-dash-text-subtle text-xs font-mono">{row.media_id}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                          row.approved === true && row.rights_status === 'cleared'
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
                         }`}
-                        title="Copy URL for the article form"
                       >
-                        {copiedId === row._id ? (
-                          <>
-                            <FaCheck className="w-3 h-3" /> Copied
-                          </>
-                        ) : (
-                          <>
-                            <FaCopy className="w-3 h-3" /> Copy
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 au-dash-text-subtle text-xs">{row.media_id}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        row.approved === true && row.rights_status === 'cleared'
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-yellow-500/20 text-yellow-400'
-                      }`}
-                    >
-                      {row.approved === true && row.rights_status === 'cleared'
-                        ? 'Approved'
-                        : `Not approved · ${row.rights_status || 'unverified'}`}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPreviewBroken(false);
-                          setPreview(row);
-                        }}
-                        className="p-2 rounded-lg bg-white/10 au-dash-text-muted"
-                        title="Preview image"
-                      >
-                        <FaEye className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => startEdit(row)}
-                        className="p-2 rounded-lg bg-blue-500/20 text-blue-300"
-                        title="Edit media"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                      {row.approved === true && row.rights_status === 'cleared' ? null : (
+                        {row.approved === true && row.rights_status === 'cleared'
+                          ? 'Approved'
+                          : `Not approved · ${row.rights_status || 'unverified'}`}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => handleApprove(row._id)}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs"
-                          title="Approve media (clears rights)"
+                          type="button"
+                          onClick={() => {
+                            setPreviewBroken(false);
+                            setPreview(row);
+                          }}
+                          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 au-dash-text-muted transition-colors"
+                          title="Preview image"
                         >
-                          <FaCheck className="w-3 h-3" /> Approve
+                          <FaEye className="w-3.5 h-3.5" />
                         </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(row)}
-                        className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
-                        title="Delete media"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(row)}
+                          className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 transition-colors"
+                          title="Edit media"
+                        >
+                          <FaEdit className="w-3.5 h-3.5" />
+                        </button>
+                        {row.approved === true && row.rights_status === 'cleared' ? null : (
+                          <button
+                            onClick={() => handleApprove(row._id)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-medium transition-colors"
+                            title="Approve media (clears rights)"
+                          >
+                            <FaCheck className="w-3 h-3" /> Approve
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(row)}
+                          className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
+                          title="Delete media"
+                        >
+                          <FaTrash className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

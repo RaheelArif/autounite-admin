@@ -880,41 +880,50 @@ button.aos-avatar-btn {
   }
 }
 
-@media (max-width: 880px) {
+@media (max-width: 1023px) {
   .aos-shell {
-    grid-template-columns: 1fr;
-    overflow: auto;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    min-height: 100vh;
   }
 
   .aos-sidebar {
-    position: sticky;
+    position: fixed !important;
     top: 0;
-    z-index: 10;
-    height: auto;
-    flex-direction: row;
-    align-items: center;
-    overflow: auto;
-    padding: 12px;
+    left: 0;
+    bottom: 0;
+    width: 280px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.85);
   }
 
-  .aos-logo {
-    height: auto;
-    min-width: 70px;
+  .aos-sidebar.is-mobile-open {
+    transform: translateX(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
   .aos-nav {
-    flex-direction: row;
-    padding: 0;
+    flex-direction: column !important;
+    padding-top: 12px;
   }
 
   .aos-sidebar-section,
   .aos-sidebar-footer {
-    display: none;
+    display: block;
   }
 
   .aos-main {
-    height: auto;
-    padding: 22px;
+    height: auto !important;
+    min-height: calc(100vh - 56px);
+    padding: 16px !important;
     grid-template-rows: auto;
   }
 
@@ -924,13 +933,13 @@ button.aos-avatar-btn {
   }
 
   .aos-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     width: 100%;
   }
 
   .aos-carousel {
     min-height: unset;
-    padding: 0 44px 36px;
+    padding: 0 10px 24px;
   }
 
   .aos-ai {

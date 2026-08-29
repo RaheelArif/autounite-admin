@@ -111,30 +111,36 @@ export default function DistributionTab() {
         </form>
       </div>
       <div className="au-dash-card overflow-hidden">
-        <table className="w-full">
-          <thead className="au-dash-table-head">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Article</th>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Channel</th>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Status</th>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Posted</th>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Wrapper</th>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">URL</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((row) => (
-              <tr key={row._id} className="border-t border-white/10">
-                <td className="px-4 py-3 au-dash-text text-sm">{row.article_id}</td>
-                <td className="px-4 py-3 au-dash-text">{row.channel}</td>
-                <td className="px-4 py-3 au-dash-text-subtle">{row.status}</td>
-                <td className="px-4 py-3 au-dash-text-subtle text-sm">{row.posted_at ? new Date(row.posted_at).toLocaleDateString() : '-'}</td>
-                <td className="px-4 py-3 au-dash-text-subtle text-sm">{row.wrapper_version || '-'}</td>
-                <td className="px-4 py-3 au-dash-text-subtle text-sm truncate max-w-[240px]">{row.external_url || '-'}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px]">
+            <thead className="au-dash-table-head">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Article</th>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Channel</th>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Status</th>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Posted</th>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Wrapper</th>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">URL</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((row) => (
+                <tr key={row._id} className="border-t border-white/10 hover:bg-white/[0.03]">
+                  <td className="px-4 py-3 au-dash-text text-sm font-medium">{row.article_id}</td>
+                  <td className="px-4 py-3 au-dash-text capitalize">{row.channel}</td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-0.5 rounded text-xs bg-green-500/20 text-green-400">
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 au-dash-text-subtle text-sm">{row.posted_at ? new Date(row.posted_at).toLocaleDateString() : '-'}</td>
+                  <td className="px-4 py-3 au-dash-text-subtle text-xs font-mono">{row.wrapper_version || '-'}</td>
+                  <td className="px-4 py-3 au-dash-text-subtle text-sm truncate max-w-[240px]">{row.external_url || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import { getUser, logout } from '@/lib/auth';
 import { hrefForAdminOsToolId, parseAdminOsTool } from '@/lib/adminOsTools';
 import AdminOsCardDrawer from '@/components/admin-os/AdminOsCardDrawer';
 import AdminOsToolWorkspace from '@/components/admin-os/AdminOsToolWorkspace';
-import { FaFacebookF, FaInstagram, FaYoutube, FaLinkedinIn } from 'react-icons/fa';
+import { FaFacebookF, FaInstagram, FaYoutube, FaLinkedinIn, FaBars, FaTimes } from 'react-icons/fa';
 import '../../app/admin/admin-os.css';
 
 const ADMIN_OS_SOCIAL_LINKS = [
@@ -51,6 +51,7 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
   const [drawerCard, setDrawerCard] = useState(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [activeTool, setActiveTool] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const envLabel = getAdminOsEnvironmentLabel();
   const user = typeof window !== 'undefined' ? getUser() : null;
@@ -89,6 +90,7 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
     const tool = parseAdminOsTool(href);
     setDrawerCard(null);
     setAiOpen(false);
+    setMobileMenuOpen(false);
     if (!tool || tool.id === 'external') {
       router.push(href);
       return;
@@ -108,6 +110,7 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
     setDrawerCard(null);
     setAiOpen(false);
     setActiveTool(null);
+    setMobileMenuOpen(false);
     router.push(`/admin/${id}`);
   };
 
@@ -117,7 +120,7 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
         dangerouslySetInnerHTML={{
           __html: `
             .aos-shell{display:grid!important;grid-template-columns:248px minmax(0,1fr)!important;min-height:100vh;color:#fff;background:#050812;position:relative}
-            .aos-sidebar{display:flex!important;flex-direction:column!important;height:100vh;padding:28px 20px 24px;border-right:1px solid rgba(255,255,255,.13);background:linear-gradient(180deg,rgba(3,6,13,.92),rgba(7,11,22,.88));overflow-y:auto;z-index:20}
+            .aos-sidebar{display:flex!important;flex-direction:column!important;height:100vh;padding:28px 20px 24px;border-right:1px solid rgba(255,255,255,.13);background:linear-gradient(180deg,rgba(3,6,13,.95),rgba(7,11,22,.92));overflow-y:auto;z-index:40}
             .aos-nav{display:flex!important;flex-direction:column!important;gap:9px;padding-top:12px}
             .aos-nav-btn{border:1px solid transparent;border-radius:14px;background:transparent;color:rgba(255,255,255,.83);padding:13px 14px;display:flex;align-items:center;gap:12px;font:inherit;font-size:15px;cursor:pointer;text-align:left;width:100%}
             .aos-nav-btn.is-active{background:linear-gradient(135deg,#4517f5,#210c9f);border-color:rgba(142,92,255,.45);color:#fff}
@@ -141,16 +144,81 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
             .aos-shell__bg,.aos-shell__glow{position:fixed;inset:0;pointer-events:none}
             .aos-shell__bg{z-index:-3;filter:saturate(1.1) contrast(1.08)}
             .aos-shell__glow{z-index:-2;background:radial-gradient(circle at 62% 18%,rgba(111,48,255,.26),transparent 32%),radial-gradient(circle at 20% 85%,rgba(232,169,78,.12),transparent 28%)}
-            @media (max-width:880px){.aos-shell{grid-template-columns:1fr!important}.aos-cards{grid-template-columns:1fr!important}.aos-bottom-pills{grid-template-columns:1fr 1fr!important}.aos-sidebar{height:auto;flex-direction:row!important}.aos-main{height:auto}}
+            .aos-mobile-bar{display:none}
+
+            @media (max-width:1023px){
+              .aos-shell{display:flex!important;flex-direction:column!important;grid-template-columns:1fr!important;min-height:100vh}
+              .aos-mobile-bar{display:flex!important;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;height:56px;padding:0 16px;background:rgba(5,8,18,.95);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.12)}
+              .aos-sidebar{position:fixed!important;top:0;left:0;bottom:0;width:280px!important;max-width:85vw!important;height:100vh!important;z-index:1000!important;transform:translateX(-100%);transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .28s ease;opacity:0;pointer-events:none;box-shadow:20px 0 50px rgba(0,0,0,.85)}
+              .aos-sidebar.is-mobile-open{transform:translateX(0)!important;opacity:1!important;pointer-events:auto!important}
+              .aos-sidebar-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:999}
+              .aos-main{height:auto!important;min-height:calc(100vh - 56px);padding:16px!important;overflow-x:hidden!important}
+              .aos-main--tool{padding:12px!important}
+              .aos-cards{grid-template-columns:1fr!important;width:100%!important}
+              .aos-carousel{padding:0 10px 24px!important;min-height:unset!important}
+              .aos-bottom-pills{grid-template-columns:1fr 1fr!important;gap:12px!important}
+              .aos-ai{width:100%!important;grid-template-columns:50px 1fr 20px!important;padding:12px 16px!important}
+              .aos-top{flex-direction:column!important;align-items:flex-start!important;gap:8px!important}
+            }
+            @media (max-width:480px){
+              .aos-bottom-pills{grid-template-columns:1fr!important}
+            }
           `,
         }}
       />
       <div className="aos-shell__bg" style={BG_LAYER} aria-hidden />
       <div className="aos-shell__glow" aria-hidden />
 
-      <aside className="aos-sidebar" aria-label="Admin OS navigation">
-        <div className="aos-logo">
+      {/* Mobile Top Header */}
+      <div className="aos-mobile-bar">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            className="p-2 rounded-xl bg-white/10 hover:bg-white/15 text-white transition-colors flex items-center justify-center border border-white/15 shadow-sm"
+            aria-label={mobileMenuOpen ? 'Close navigation' : 'Open navigation'}
+          >
+            {mobileMenuOpen ? <FaTimes className="w-5 h-5" /> : <FaBars className="w-5 h-5" />}
+          </button>
+          <img src="/au-mark-white.png" alt="AutoUnite" width={80} height={34} className="object-contain" />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600/30 text-indigo-200 border border-indigo-500/30">
+            {activeTool ? activeTool.label : tab.label}
+          </span>
+          <button
+            type="button"
+            className="aos-avatar-btn !w-8 !h-8 !text-xs"
+            title={user?.email || 'Admin'}
+            onClick={() => { try { logout(); } catch {} router.push('/login'); }}
+          >
+            {initialsFromUser(user)}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Backdrop */}
+      {mobileMenuOpen ? (
+        <div
+          className="aos-sidebar-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      ) : null}
+
+      <aside className={`aos-sidebar${mobileMenuOpen ? ' is-mobile-open' : ''}`} aria-label="Admin OS navigation">
+        <div className="aos-logo flex items-center justify-between">
           <img src="/au-mark-white.png" alt="AutoUnite" width={96} height={40} />
+          {mobileMenuOpen && (
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors lg:hidden"
+              aria-label="Close sidebar"
+            >
+              <FaTimes className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <nav className="aos-nav">

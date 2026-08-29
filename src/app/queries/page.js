@@ -355,7 +355,7 @@ export default function QueriesPage() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[760px]">
                 <thead className="au-dash-table-head">
                   <tr>
                     <th className="px-6 py-4 text-left">

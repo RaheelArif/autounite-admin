@@ -20,6 +20,9 @@ import {
   FaCalendarAlt,
   FaHistory,
   FaUndo,
+  FaExternalLinkAlt,
+  FaCopy,
+  FaCheck,
 } from 'react-icons/fa';
 import {
   getArticles,
@@ -149,6 +152,25 @@ export default function ArticlesTab() {
   const [tags, setTags] = useState([]);
   const [allArticles, setAllArticles] = useState([]);
   const [approvedMedia, setApprovedMedia] = useState([]);
+  const [copiedSlugId, setCopiedSlugId] = useState('');
+
+  const getPublicArticleUrl = (slug) => {
+    const base = process.env.NEXT_PUBLIC_CONSUMER_BASE_URL || 'https://www.autounite.com';
+    return `${base.replace(/\/+$/, '')}/blog/${slug}`;
+  };
+
+  const handleCopyLink = async (art) => {
+    const url = getPublicArticleUrl(art.slug);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedSlugId(art._id);
+      setTimeout(() => {
+        setCopiedSlugId((prev) => (prev === art._id ? '' : prev));
+      }, 1800);
+    } catch {
+      // fallback
+    }
+  };
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
@@ -761,7 +783,7 @@ export default function ArticlesTab() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[900px]">
                 <thead className="au-dash-table-head">
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Title</th>
@@ -781,7 +803,34 @@ export default function ArticlesTab() {
                       <td className="px-6 py-4 au-dash-text font-medium max-w-[200px] truncate" title={art.title}>
                         {art.title}
                       </td>
-                      <td className="px-6 py-4 au-dash-text-subtle text-sm max-w-[150px] truncate">{art.slug}</td>
+                      <td className="px-6 py-4 au-dash-text-subtle text-sm min-w-[180px] max-w-[260px]">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-mono text-xs text-slate-300 truncate" title={art.slug}>
+                            {art.slug}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyLink(art)}
+                            className={`p-1.5 rounded-md text-xs shrink-0 transition-colors ${
+                              copiedSlugId === art._id
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : 'bg-white/5 hover:bg-white/15 text-slate-400 hover:text-slate-200'
+                            }`}
+                            title="Copy full public URL"
+                          >
+                            {copiedSlugId === art._id ? <FaCheck className="w-3 h-3 text-emerald-400" /> : <FaCopy className="w-3 h-3" />}
+                          </button>
+                          <a
+                            href={getPublicArticleUrl(art.slug)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-md bg-white/5 hover:bg-white/15 text-indigo-300 hover:text-indigo-200 shrink-0 transition-colors"
+                            title={`Open live article: ${getPublicArticleUrl(art.slug)}`}
+                          >
+                            <FaExternalLinkAlt className="w-2.5 h-2.5" />
+                          </a>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 au-dash-text-subtle text-sm">
                         {ARTICLE_TYPES.find((t) => t.value === art.type)?.label || art.type}
                       </td>
@@ -916,7 +965,33 @@ export default function ArticlesTab() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium au-dash-text-muted mb-1">Slug *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium au-dash-text-muted">Slug *</label>
+                      {formData.slug ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = getPublicArticleUrl(formData.slug);
+                              navigator.clipboard.writeText(url);
+                            }}
+                            className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                            title="Copy full URL"
+                          >
+                            <FaCopy className="w-2.5 h-2.5" /> Copy Link
+                          </button>
+                          <a
+                            href={getPublicArticleUrl(formData.slug)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                            title="Open in new tab"
+                          >
+                            <FaExternalLinkAlt className="w-2.5 h-2.5" /> Open
+                          </a>
+                        </div>
+                      ) : null}
+                    </div>
                     <input
                       type="text"
                       value={formData.slug}
@@ -925,6 +1000,11 @@ export default function ArticlesTab() {
                       placeholder="e.g. how-to-compare-car-trims"
                       className="au-dash-input placeholder-slate-500"
                     />
+                    {formData.slug ? (
+                      <p className="mt-1 text-[11px] text-slate-400 font-mono truncate">
+                        {getPublicArticleUrl(formData.slug)}
+                      </p>
+                    ) : null}
                   </div>
                   <div>
                     <label className="block text-sm font-medium au-dash-text-muted mb-1">Type *</label>
@@ -1267,6 +1347,38 @@ export default function ArticlesTab() {
                   onPackageDetected={applyPastedPackage}
                 />
               </div>
+
+              {/* Live Right Rail TOC Preview */}
+              {Array.isArray(formData.sections) && formData.sections.length > 0 && (
+                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-300">
+                        Right Rail (On This Page) Live Preview
+                      </h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/20 text-indigo-200 border border-indigo-500/30">
+                      {formData.sections.filter((s) => s.label && !/^related/i.test(s.label)).length} Sections Detected
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {formData.sections
+                      .filter((s) => s.label && !/^related/i.test(s.label))
+                      .map((sec, idx) => (
+                        <div
+                          key={sec.section_id || idx}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-slate-200 shadow-sm"
+                        >
+                          <span className="font-mono text-indigo-400 font-bold">{idx + 1}.</span>
+                          <span className="font-medium truncate max-w-[320px]" title={sec.label}>
+                            {sec.label}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
 
               {/* Filled by the paste, not typed. Shown so the editor can see what was
                   captured and clear it if a package was pasted by mistake. */}

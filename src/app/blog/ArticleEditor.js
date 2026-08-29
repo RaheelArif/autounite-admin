@@ -84,6 +84,8 @@ export default function ArticleEditor({ value, onChange, onPackageDetected }) {
           if (onPackageDetected) onPackageDetected(parsed);
           if (parsed.html && editor) {
             editor.commands.setContent(parsed.html, true);
+            const freshSections = htmlToSections(parsed.html, initial.preserved);
+            onChange(freshSections);
           }
           return true;
         }

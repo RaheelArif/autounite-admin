@@ -250,7 +250,7 @@ export default function CategoriesTab() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[680px]">
                 <thead className="au-dash-table-head">
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold au-dash-text-muted">Name</th>

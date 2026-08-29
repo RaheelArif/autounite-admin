@@ -66,36 +66,39 @@ export default function AuthorsTab() {
         </form>
       </div>
       <div className="au-dash-card overflow-hidden">
-        <table className="w-full">
-          <thead className="au-dash-table-head">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Name</th>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Slug</th>
-              <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Author ID</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((row) => (
-              <tr key={row._id} className="border-t border-white/10">
-                <td className="px-4 py-3 au-dash-text">{row.name}</td>
-                <td className="px-4 py-3 au-dash-text-subtle">{row.slug}</td>
-                <td className="px-4 py-3 au-dash-text-subtle text-xs">{row.author_id}</td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={async () => {
-                      await deleteBlogAuthor(row._id);
-                      load();
-                    }}
-                    className="p-2 rounded-lg bg-red-500/20 text-red-400"
-                  >
-                    <FaTrash className="w-4 h-4" />
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px]">
+            <thead className="au-dash-table-head">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Name</th>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Slug</th>
+                <th className="px-4 py-3 text-left text-sm au-dash-text-muted">Author ID</th>
+                <th className="px-4 py-3" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((row) => (
+                <tr key={row._id} className="border-t border-white/10 hover:bg-white/[0.03]">
+                  <td className="px-4 py-3 au-dash-text font-medium">{row.name}</td>
+                  <td className="px-4 py-3 au-dash-text-subtle text-sm">{row.slug}</td>
+                  <td className="px-4 py-3 au-dash-text-subtle text-xs font-mono">{row.author_id}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={async () => {
+                        await deleteBlogAuthor(row._id);
+                        load();
+                      }}
+                      className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
+                      title="Delete author"
+                    >
+                      <FaTrash className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

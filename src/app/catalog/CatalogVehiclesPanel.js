@@ -935,7 +935,7 @@ export default function CatalogVehiclesPanel() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[850px] text-sm">
             <thead>
               <tr className="border-b border-white/10 text-left au-dash-text-muted">
                 {[
