@@ -23,6 +23,7 @@ import {
   FaExternalLinkAlt,
   FaCopy,
   FaCheck,
+  FaExclamationCircle,
 } from 'react-icons/fa';
 import {
   getArticles,
@@ -253,6 +254,7 @@ export default function ArticlesTab() {
   }, [formOpen, fetchCategoriesAndTags, fetchAllArticles, fetchApprovedMedia]);
 
   const openCreateForm = () => {
+    setError('');
     setEditingArticle(null);
     setFormData({
       ...DEFAULT_FORM,
@@ -263,6 +265,7 @@ export default function ArticlesTab() {
   };
 
   const openEditForm = async (article) => {
+    setError('');
     setEditingArticle(article);
     try {
       const res = await getArticleById(article._id);
@@ -300,6 +303,7 @@ export default function ArticlesTab() {
   };
 
   const closeForm = () => {
+    setError('');
     setFormOpen(false);
     setEditingArticle(null);
     setSubmitting(false);
@@ -948,6 +952,25 @@ export default function ArticlesTab() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {/* Form Error Banner */}
+              {error && (
+                <div className="p-4 rounded-xl bg-red-500/15 border border-red-500/50 text-red-300 flex items-start gap-3 shadow-lg">
+                  <FaExclamationCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-200">Failed to save article</p>
+                    <p className="text-xs text-red-300/90 mt-0.5">{error}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setError('')}
+                    className="text-red-400 hover:text-red-200 text-xs p-1"
+                    title="Dismiss"
+                  >
+                    <FaTimes className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
               {/* Quick Ingest Helper */}
               {/* Basic */}
               <div className="space-y-4">
@@ -1459,35 +1482,43 @@ export default function ArticlesTab() {
               </div>
 
               {/* Submit / Actions */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[rgba(255,255,255,0.1)]">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="au-dash-btn disabled:opacity-50"
-                  >
-                    {submitting ? 'Saving...' : editingArticle ? 'Update Article' : 'Create Draft'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeForm}
-                    className="px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg hover:bg-white/5 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                {editingArticle && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLifecycleModalArticle(editingArticle);
-                    }}
-                    className="px-3.5 py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium flex items-center gap-2 transition-colors"
-                  >
-                    <FaEllipsisH className="w-3.5 h-3.5" />
-                    Manage Status ({editingArticle.status})
-                  </button>
+              <div className="space-y-3 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                {error && (
+                  <p className="text-xs text-red-400 font-medium flex items-center gap-1.5">
+                    <FaExclamationCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{error}</span>
+                  </p>
                 )}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="au-dash-btn disabled:opacity-50"
+                    >
+                      {submitting ? 'Saving...' : editingArticle ? 'Update Article' : 'Create Draft'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeForm}
+                      className="px-4 py-2 au-dash-tab au-dash-text-muted rounded-lg hover:bg-white/5 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {editingArticle && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLifecycleModalArticle(editingArticle);
+                      }}
+                      className="px-3.5 py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium flex items-center gap-2 transition-colors"
+                    >
+                      <FaEllipsisH className="w-3.5 h-3.5" />
+                      Manage Status ({editingArticle.status})
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
           </div>

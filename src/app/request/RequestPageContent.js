@@ -63,7 +63,15 @@ export default function RequestPageContent({ hideStats = false }) {
       };
       
       const data = await getUserRequests(filters);
-      setRequests(data.data || []);
+      let reqList = data.data || [];
+      if (sortBy === 'createdAt') {
+        reqList = [...reqList].sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+      }
+      setRequests(reqList);
       setPagination(data.pagination || null);
     } catch (err) {
       setError(err.message || 'Failed to load requests');

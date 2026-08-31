@@ -13,6 +13,7 @@ import {
   FaTimes,
   FaCheckCircle,
   FaTimesCircle,
+  FaExclamationCircle,
 } from 'react-icons/fa';
 import {
   getTags,
@@ -299,6 +300,12 @@ export default function TagsTab() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {error && (
+                <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/50 text-red-300 flex items-start gap-2 text-xs">
+                  <FaExclamationCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                  <span className="flex-1">{error}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium au-dash-text-muted mb-1">Name *</label>
                 <input

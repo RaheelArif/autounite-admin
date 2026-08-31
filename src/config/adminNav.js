@@ -2,6 +2,7 @@
 export const ADMIN_NAV_ITEMS = [
   { id: 'search-governance', label: 'Search QA' },
   { id: 'blog', label: 'Blog' },
+  { id: 'request', label: 'Leads / Requests' },
   { id: 'users', label: 'Users' },
   { id: 'dealer-beta', label: 'Dealer Beta' },
   { id: 'dealer-bootstrap', label: 'Dealer Bootstrap' },

@@ -84,7 +84,15 @@ export default function AdminOsShell({ tabId = 'dealers' }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync from URL only
   }, [searchParams]);
 
-  const openCard = (card) => setDrawerCard(card);
+  const handleCardClick = (card) => {
+    if (card?.existingHref) {
+      openTool(card.existingHref);
+      return;
+    }
+    setDrawerCard(card);
+  };
+
+  const openCard = (card) => handleCardClick(card);
 
   const openTool = (href) => {
     const tool = parseAdminOsTool(href);

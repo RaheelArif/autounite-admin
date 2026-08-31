@@ -55,7 +55,15 @@ export default function UsersPageContent() {
       };
       
       const data = await getUsers(filters);
-      setUsers(data.data?.users || []);
+      let userList = data.data?.users || [];
+      if (sortBy === 'createdAt') {
+        userList = [...userList].sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+      }
+      setUsers(userList);
       setPagination(data.data?.pagination || null);
     } catch (err) {
       setError(err.message || 'Failed to load users');

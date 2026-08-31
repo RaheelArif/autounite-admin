@@ -8,12 +8,14 @@ import {
   FaSearch,
   FaHandshake,
   FaCar,
+  FaEnvelope,
 } from 'react-icons/fa';
 import { ADMIN_NAV_ITEMS } from '@/config/adminNav';
 
 const NAV_ICONS = {
   'search-governance': FaSearch,
   blog: FaBook,
+  request: FaEnvelope,
   users: FaUsers,
   'dealer-beta': FaHandshake,
   'dealer-bootstrap': FaStore,
