@@ -431,6 +431,12 @@ console.log('Plain text paste parsed sections count:', plainSections.length);
 plainSections.forEach((s, idx) => console.log(`   [${idx}]: ${s.label} (${s.blocks.length} blocks)`));
 assert.equal(plainSections.length, 6, 'Plain text paste yields all 6 H2 sections');
 
+const relatedPkg = parsePastedPackage(rawPlainText);
+console.log('Related parsed from package:', relatedPkg.related);
+assert.equal(relatedPkg.related.length, 2, 'Package related content has 2 rows');
+assert.equal(relatedPkg.related[0].slug, 'inventory-is-back-that-doesnt-mean-every-deal-is-better');
+assert.equal(relatedPkg.related[1].slug, 'how-a-32500-car-deal-became-39800');
+
 // Test markdown bold and italic parsing
 const sampleMd = 'The headline number for July was **6.4%** and *market context*.';
 const mdPkg = parsePastedPackage(`ARTICLE BODY\n${sampleMd}\nEND OF BLOG ARTICLE PACKAGE`);

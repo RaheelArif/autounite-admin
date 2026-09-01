@@ -109,6 +109,7 @@ const DEFAULT_FORM = {
   seo: { ...DEFAULT_SEO },
   sections: [],
   related_article_ids: [],
+  related_article_slugs: [],
   sources: [],
   decide_first: null,
   lineage: { ...DEFAULT_LINEAGE },
@@ -292,6 +293,7 @@ export default function ArticlesTab() {
         },
         sections: Array.isArray(a.sections) ? JSON.parse(JSON.stringify(a.sections)) : [],
         related_article_ids: Array.isArray(a.related_article_ids) ? a.related_article_ids : [],
+        related_article_slugs: Array.isArray(a.related_article_slugs) ? a.related_article_slugs : [],
         sources: Array.isArray(a.sources) ? a.sources : [],
         decide_first: a.decide_first || null,
         lineage: { ...DEFAULT_LINEAGE, ...(a.lineage || {}) },
@@ -325,8 +327,8 @@ export default function ArticlesTab() {
   };
 
   /** Fill from the pasted package, updating any empty or parsed fields. */
-  const applyPastedPackage = ({ meta, decideFirst, sources } = {}) => {
-    if (!meta && !decideFirst && !sources) return;
+  const applyPastedPackage = ({ meta, decideFirst, sources, related } = {}) => {
+    if (!meta && !decideFirst && !sources?.length && !related?.length) return;
     setFormData((prev) => {
       const next = { ...prev, seo: { ...prev.seo }, lineage: { ...prev.lineage } };
       const m = meta || {};
@@ -416,6 +418,14 @@ export default function ArticlesTab() {
           verified_at: row.verifiedAt || null,
         }));
       }
+
+      if (related?.length) {
+        const slugs = related.map((row) => String(row.slug || '').toLowerCase().trim()).filter(Boolean);
+        next.related_article_slugs = slugs;
+        next.related_article_ids = slugs
+          .map((slug) => allArticles.find((article) => article.slug === slug)?.article_id)
+          .filter(Boolean);
+      }
       return next;
     });
   };
@@ -461,6 +471,7 @@ export default function ArticlesTab() {
         },
         sections: formData.sections,
         related_article_ids: formData.related_article_ids,
+        related_article_slugs: formData.related_article_slugs?.length ? formData.related_article_slugs : undefined,
         sources: formData.sources.length ? formData.sources : undefined,
         decide_first: formData.decide_first || undefined,
         // Blank lineage rows would overwrite the defaults the API owns.
@@ -1461,6 +1472,27 @@ export default function ArticlesTab() {
               {/* Related Articles */}
               <div className="space-y-2">
                 <h4 className="text-md font-semibold au-dash-text-strong">Related Articles</h4>
+                {formData.related_article_slugs?.length > 0 ? (
+                  <div className="au-dash-card p-3 text-sm space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide au-dash-text-subtle">From package</p>
+                    <ul className="space-y-1">
+                      {formData.related_article_slugs.map((slug) => {
+                        const match = allArticles.find((article) => article.slug === slug);
+                        return (
+                          <li key={slug} className="au-dash-text-muted">
+                            <span className="font-medium au-dash-text">{match?.title || slug}</span>
+                            <span className="text-xs au-dash-text-subtle"> · {slug}</span>
+                            {match ? (
+                              <span className="ml-2 text-xs text-emerald-400">Resolved</span>
+                            ) : (
+                              <span className="ml-2 text-xs text-amber-300">Pending — not in Blog OS yet</span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ) : null}
                 <select
                   multiple
                   value={formData.related_article_ids}
@@ -1473,12 +1505,12 @@ export default function ArticlesTab() {
                   {allArticles
                     .filter((a) => !editingArticle || a._id !== editingArticle._id)
                     .map((a) => (
-                      <option key={a._id} value={a._id}>
+                      <option key={a.article_id || a._id} value={a.article_id}>
                         {a.title} ({a.slug})
                       </option>
                     ))}
                 </select>
-                <p className="text-xs au-dash-text-subtle">Ctrl/Cmd + click to select multiple</p>
+                <p className="text-xs au-dash-text-subtle">Ctrl/Cmd + click to select multiple. Package slugs resolve automatically when the target article exists.</p>
               </div>
 
               {/* Submit / Actions */}

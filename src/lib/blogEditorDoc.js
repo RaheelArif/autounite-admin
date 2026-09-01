@@ -340,6 +340,59 @@ function sourcesFromTable(table) {
     .filter((source) => source.url);
 }
 
+const RELATED_COLUMNS = {
+  title: 'title',
+  'article slug': 'slug',
+  slug: 'slug',
+};
+
+function normalizeRelatedSlug(value = '') {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^.*\/blog\//, '')
+    .replace(/^\/+|\/+$/g, '');
+}
+
+function relatedFromTable(table) {
+  const [header, ...rows] = tableRows(table);
+  if (!header) return [];
+  const fields = header.map((column) => RELATED_COLUMNS[String(column || '').toLowerCase()] || '');
+  if (!fields.includes('slug')) return [];
+  return rows
+    .map((cells) => {
+      const row = {};
+      fields.forEach((field, index) => {
+        const text = resolved(cells[index]);
+        if (!field || !text) return;
+        row[field] = field === 'slug' ? normalizeRelatedSlug(text) : text;
+      });
+      return row;
+    })
+    .filter((row) => row.slug);
+}
+
+function relatedFromNodes(nodes, startIndex) {
+  const related = [];
+  for (let i = startIndex; i < nodes.length; i += 1) {
+    const text = nodes[i].textContent?.trim() || '';
+    if (!text) continue;
+    if (/^END OF BLOG/i.test(text)) break;
+    if (/^title\b/i.test(text) && /slug/i.test(text) && text.includes('\t')) continue;
+    const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (/^title\b/i.test(line) && /slug/i.test(line)) continue;
+      const cells = line.includes('\t') ? line.split('\t') : line.split(/\s{2,}/);
+      if (cells.length < 2) continue;
+      const title = cells[0].trim();
+      const slug = normalizeRelatedSlug(cells[cells.length - 1]);
+      if (!slug || slug.length < 4) continue;
+      related.push({ title, slug });
+    }
+  }
+  return related;
+}
+
 function entirelyBold(element) {
   const walker = element.ownerDocument.createTreeWalker(element, 0x4 /* SHOW_TEXT */);
   let sawText = false;
@@ -639,7 +692,7 @@ export function sanitizeHtmlInput(html) {
  * lifted out when it really reads like one.
  */
 export function parsePastedPackage(html) {
-  const empty = { html: html || '', meta: {}, decideFirst: null, sources: [] };
+  const empty = { html: html || '', meta: {}, decideFirst: null, sources: [], related: [] };
   if (typeof window === 'undefined' || !html) return empty;
 
   const cleaned = sanitizeHtmlInput(html);
@@ -723,6 +776,13 @@ export function parsePastedPackage(html) {
   const sourcesHit = sourcesAt >= 0 ? findTable(nodes, sourcesAt, -1) : null;
   let sources = sourcesHit ? sourcesFromTable(sourcesHit.table) : [];
 
+  const relatedAt = markerIndex(nodes, ['RELATED CONTENT']);
+  const relatedHit = relatedAt >= 0 ? findTable(nodes, relatedAt + 1, -1) : null;
+  let related = relatedHit ? relatedFromTable(relatedHit.table) : [];
+  if (!related.length && relatedAt >= 0) {
+    related = relatedFromNodes(nodes, relatedAt + 1);
+  }
+
   // Fallback: sources listed in bullet list or links under "Sources & Methodology" or "Sources" heading
   if (!sources.length) {
     const sourcesHeadingIdx = nodes.findIndex((n) =>
@@ -763,7 +823,7 @@ export function parsePastedPackage(html) {
     .map((node) => node.outerHTML)
     .join('');
 
-  return { html: promoteBoldHeadings(body), meta, decideFirst, sources };
+  return { html: promoteBoldHeadings(body), meta, decideFirst, sources, related };
 }
 
 /** Blocks the editor cannot express, kept aside so editing never drops them. */
